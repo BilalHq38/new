@@ -1,0 +1,92 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1>Dashboard</h1>
+
+<div style="margin-bottom:16px;">
+  <a href="/admin/tournament/new" class="btn btn-primary">+ New Tournament</a>
+</div>
+
+{% if tournaments %}
+<div class="table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Template</th>
+        <th>Start Date</th>
+        <th>Status</th>
+        <th>Participants</th>
+        <th>Visible</th>
+        <th>Home Table</th>
+        <th>Pinned</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tournaments %}
+      <tr>
+        <td><strong>{{ t.name }}</strong></td>
+        <td style="font-size:0.82rem;">{{ t.template_label }}</td>
+        <td>{{ t.start_date }}</td>
+        <td><span class="badge badge-{{ t.status }}">{{ t.status | replace("_"," ") | title }}</span></td>
+        <td style="text-align:center;">{{ t.participant_count }}</td>
+        <td style="text-align:center;">
+          <form method="post" action="/admin/tournament/{{ t.id }}/toggle-visible" style="display:inline;">
+            <button type="submit" class="btn btn-sm {% if t.is_visible %}btn-success{% else %}btn-secondary{% endif %}">
+              {% if t.is_visible %}Yes{% else %}No{% endif %}
+            </button>
+          </form>
+        </td>
+        <td style="text-align:center;">
+          {% if t.is_visible %}
+          <form method="post" action="/admin/tournament/{{ t.id }}/toggle-home-display" style="display:inline;">
+            <button type="submit" class="btn btn-sm {% if t.show_on_home %}btn-success{% else %}btn-secondary{% endif %}"
+                    title="Show this tournament's leaderboard on the home page">
+              {% if t.show_on_home %}Yes{% else %}No{% endif %}
+            </button>
+          </form>
+          {% else %}
+          <span class="admin-disabled-label" title="Make the tournament visible before showing it on the home page">No</span>
+          {% endif %}
+        </td>
+        <td style="text-align:center;">
+          <form method="post" action="/admin/tournament/{{ t.id }}/toggle-pin" style="display:inline;">
+            <button type="submit" class="btn btn-sm {% if t.is_pinned %}btn-warning{% else %}btn-secondary{% endif %}">
+              {% if t.is_pinned %}📌{% else %}–{% endif %}
+            </button>
+          </form>
+        </td>
+        <td>
+          <div class="action-btns">
+            <a href="/admin/tournament/{{ t.id }}/edit" class="btn btn-sm btn-secondary">Edit</a>
+            <a href="/admin/tournament/{{ t.id }}/participants" class="btn btn-sm btn-primary">Participants</a>
+            <a href="/admin/tournament/{{ t.id }}/times" class="btn btn-sm btn-primary">Times</a>
+            <a href="/tournament/{{ t.id }}" target="_blank" class="btn btn-sm btn-secondary">View</a>
+
+            {% if t.is_published %}
+            <form method="post" action="/admin/tournament/{{ t.id }}/unpublish" style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-warning">Unpublish</button>
+            </form>
+            {% else %}
+            <form method="post" action="/admin/tournament/{{ t.id }}/publish" style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-success">Publish Results</button>
+            </form>
+            {% endif %}
+
+            <form method="post" action="/admin/tournament/{{ t.id }}/delete"
+                  class="confirm-delete" style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">No tournaments yet. <a href="/admin/tournament/new">Create one now.</a></div>
+{% endif %}
+{% endblock %}

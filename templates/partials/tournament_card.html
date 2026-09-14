@@ -1,0 +1,23 @@
+<a href="/tournament/{{ t.id }}" class="tournament-card" aria-label="Open {{ t.name }}">
+  {% if t.banner_image %}
+  <img src="/static/uploads/banners/{{ t.banner_image }}" alt="{{ t.name }}" class="card-banner"/>
+  {% else %}
+  <div class="card-banner-placeholder">🏆</div>
+  {% endif %}
+
+  <div class="card-body">
+    <div class="card-heading">
+      <div class="card-name" title="{{ t.name }}">{{ t.name }}</div>
+      {% if t.is_pinned %}<span class="pinned-label">Featured</span>{% endif %}
+    </div>
+    <div class="card-meta">
+      <span class="badge badge-{{ t.status }}">{{ t.status | replace("_", " ") | title }}</span>
+      <span>{{ t.template_label }}</span>
+      <span>From {{ t.start_date }}</span>
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <span class="btn btn-primary btn-full">View Leaderboard</span>
+  </div>
+</a>

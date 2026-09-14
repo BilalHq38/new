@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Login – Pigeon flying Tournament</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-box">
+    <h1>🏆 Pigeon flying Tournament</h1>
+    <p>Admin Panel Login</p>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/admin/login">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autofocus/>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required/>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full" style="margin-top:8px;">
+        Login
+      </button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

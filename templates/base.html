@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Pigeon flying Tournament{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <script>
+    // Keep the shared ticker at the same point in its loop after normal page navigation.
+    (function () {
+      const duration = 36000;
+      let phase = 0;
+      try {
+        const saved = JSON.parse(sessionStorage.getItem("site-ticker-phase") || "null");
+        if (saved && typeof saved.phase === "number" && typeof saved.savedAt === "number") {
+          phase = (saved.phase + Math.max(0, Date.now() - saved.savedAt)) % duration;
+        }
+      } catch (error) {
+        phase = 0;
+      }
+      document.documentElement.style.setProperty("--site-ticker-delay", `${-(phase / 1000)}s`);
+      window.__siteTickerStartedAt = performance.now() - phase;
+      window.addEventListener("pagehide", function () {
+        try {
+          const currentPhase = (performance.now() - window.__siteTickerStartedAt) % duration;
+          sessionStorage.setItem("site-ticker-phase", JSON.stringify({
+            phase: currentPhase,
+            savedAt: Date.now()
+          }));
+        } catch (error) {
+          // A restricted browser storage setting should not affect navigation.
+        }
+      });
+    }());
+  </script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- TICKER -->
+<div class="ticker-wrap site-ticker" aria-label="Announcements">
+  <div class="ticker-track persistent-ticker-track">
+    <span class="ticker-item" dir="auto">{{ settings.ticker_text }}</span>
+    <span class="ticker-item" dir="auto" aria-hidden="true">{{ settings.ticker_text }}</span>
+    <span class="ticker-item" dir="auto" aria-hidden="true">{{ settings.ticker_text }}</span>
+    <span class="ticker-item" dir="auto" aria-hidden="true">{{ settings.ticker_text }}</span>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <div class="nav-hamburger-row">
+      <div class="navbar-meta">
+        <span id="live-clock">{{ now.strftime('%d.%m.%Y  %H:%M:%S') }}</span>
+        <span>|</span>
+        <span>Online: {{ online_count }}</span>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu">&#9776;</button>
+    </div>
+
+    <ul class="nav-links" id="nav-links">
+      <li><a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Home</a></li>
+
+      <li class="dropdown">
+        <button>Tournaments ▾</button>
+        <div class="dropdown-menu">
+
+          {% if in_progress %}
+          <div class="dropdown-section-label">In Progress</div>
+          {% for t in in_progress %}
+          <a href="/tournament/{{ t.id }}">{{ t.name }}</a>
+          {% endfor %}
+          {% endif %}
+
+          {% if upcoming %}
+          <div class="dropdown-section-label">Upcoming</div>
+          {% for t in upcoming %}
+          <a href="/tournament/{{ t.id }}">{{ t.name }}</a>
+          {% endfor %}
+          {% endif %}
+
+          {% if completed %}
+          <div class="dropdown-section-label">Completed</div>
+          {% for t in completed %}
+          <a href="/tournament/{{ t.id }}">{{ t.name }}</a>
+          {% endfor %}
+          {% endif %}
+
+          {% if not in_progress and not upcoming and not completed %}
+          <div class="dropdown-empty">No tournaments yet</div>
+          {% endif %}
+
+        </div>
+      </li>
+
+      <li><a href="/contact">Contact</a></li>
+
+      {% if is_admin %}
+      <li><a href="/admin" style="background:rgba(255,200,0,0.2);">Admin Panel</a></li>
+      <li><a href="/admin/logout">Logout</a></li>
+      {% endif %}
+    </ul>
+  </div>
+</nav>
+
+<!-- PAGE CONTENT -->
+{% block content %}{% endblock %}
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <span>Pigeon flying Tournaments &copy; 2026</span>
+  <span class="footer-right">Developed by M Bilal Hashmi</span>
+</footer>
+
+<script src="/static/js/main.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

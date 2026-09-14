@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}{{ tournament.name }} – Pigeon flying Tournament{% endblock %}
+
+{% block content %}
+
+{% if tournament.banner_image %}
+<img src="/static/uploads/banners/{{ tournament.banner_image }}"
+     alt="{{ tournament.name }}" class="tournament-banner"/>
+{% endif %}
+
+<div class="tournament-header">
+  <div class="container">
+    <h1>
+      {{ tournament.name }}
+      <span class="start-time">– Start time: {{ tournament.start_time }}</span>
+      <span class="badge badge-{{ tournament.status }}" style="margin-left:10px;">
+        {{ tournament.status | replace("_"," ") | title }}
+      </span>
+    </h1>
+  </div>
+</div>
+
+<div class="container page-body">
+
+  {% if tournament.info_text %}
+  <div class="info-box">Tournament Info: {{ tournament.info_text }}</div>
+  {% endif %}
+
+  {% if tournament.is_published %}
+  <section class="published-summary" aria-label="Published tournament totals">
+    <div class="published-summary-heading">
+      <span>Published Results</span>
+      {% if tournament.published_at %}
+      <time datetime="{{ tournament.published_at }}">{{ tournament.published_at[:10] }}</time>
+      {% endif %}
+    </div>
+    <div class="published-summary-values">
+      <span><strong>Lofts:</strong> {{ tournament.published_lofts }}</span>
+      <span><strong>Total pigeons:</strong> {{ tournament.published_total_pigeons }}</span>
+      <span><strong>Pigeons landed:</strong> {{ tournament.published_pigeons_landed }}</span>
+      <span><strong>Pigeons remaining:</strong> {{ tournament.published_pigeons_remaining }}</span>
+    </div>
+  </section>
+  {% endif %}
+
+  {% set floating_text = tournament.page_ticker_text or settings.detail_ticker_text %}
+  {% if floating_text %}
+  <div class="ticker-wrap tournament-ticker" aria-label="Tournament announcement">
+    <div class="ticker-track">
+      <span class="ticker-item" dir="auto">{{ floating_text }}</span>
+      <span class="ticker-item" dir="auto" aria-hidden="true">{{ floating_text }}</span>
+      <span class="ticker-item" dir="auto" aria-hidden="true">{{ floating_text }}</span>
+      <span class="ticker-item" dir="auto" aria-hidden="true">{{ floating_text }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- DATE TABS -->
+  <div class="date-tabs">
+    {% for rd in round_dates %}
+    <a class="date-tab" data-col="round-{{ loop.index }}" href="javascript:void(0)">
+      {{ rd | replace("-", ".") | regex_replace('^(\d{4})\.(\d{2})\.(\d{2})$', '\\3.\\2.\\1') }}
+    </a>
+    {% endfor %}
+    <a class="date-tab active" data-col="total" href="javascript:void(0)">Total</a>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-wrap">
+    <input type="text" id="search-input" class="search-input" placeholder="Search by name, city..."/>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="sr-col">SR</th>
+          <th class="pic-col">Pic</th>
+          <th>Name</th>
+          <th>Pigeons</th>
+          {% for rd in round_dates %}
+          <th class="time-col round-col round-{{ loop.index }}">
+            {{ rd | replace("-", ".") | regex_replace('^(\d{4})\.(\d{2})\.(\d{2})$', '\\3.\\2.\\1') }}
+          </th>
+          {% endfor %}
+          <th class="time-col total-col">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in participants %}
+        <tr class="data-row" data-search="{{ p.name | lower }} {{ p.city | lower }}">
+          <td class="sr-cell">{{ p.sr }}</td>
+          <td class="pic-cell">
+            {% if p.image %}
+            <img src="/static/uploads/participants/{{ p.image }}"
+                 alt="{{ p.name }}" class="participant-img"/>
+            {% else %}
+            <div class="participant-img-placeholder">👤</div>
+            {% endif %}
+          </td>
+          <td>
+            <div class="participant-name">{{ p.name }}</div>
+            {% if p.city %}<div class="participant-city">{{ p.city }}</div>{% endif %}
+          </td>
+          <td style="text-align:center;">{{ p.num_pigeons }}</td>
+          {% for r in p.rounds %}
+          <td class="time-cell round-col round-{{ r.round_number }} {{ r.cell_class }}">
+            {{ r.display }}
+          </td>
+          {% endfor %}
+          <td class="total-cell total-col">{{ p.total_display }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-info" id="table-info">
+    Showing {{ participants | length }} of {{ participants | length }} entries
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// date format helper: reformat YYYY.MM.DD to DD.MM.YYYY handled server-side via regex_replace
+// Tab switching already handled in main.js
+</script>
+{% endblock %}

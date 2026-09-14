@@ -1,0 +1,73 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Enter Times – {{ tournament.name }}{% endblock %}
+
+{% block content %}
+<h1>Enter Times: {{ tournament.name }}</h1>
+<div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+  <a href="/admin" class="btn btn-secondary btn-sm">← Dashboard</a>
+  <a href="/admin/tournament/{{ tournament.id }}/participants" class="btn btn-secondary btn-sm">Participants</a>
+  <a href="/tournament/{{ tournament.id }}" target="_blank" class="btn btn-secondary btn-sm">View Public Page ↗</a>
+  <span style="font-size:0.82rem;color:var(--text-muted);">
+    Format: HH:MM:SS &nbsp;|&nbsp; Leave 00:00:00 if not entered
+  </span>
+</div>
+
+{% if participants %}
+<form method="post" action="/admin/tournament/{{ tournament.id }}/times/save">
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Participant</th>
+          {% for rd in round_dates %}
+          <th style="text-align:center;">
+            Round {{ loop.index }}<br/>
+            <span style="font-size:0.76rem;font-weight:400;">
+              {{ rd | replace("-",".") }}
+            </span>
+          </th>
+          {% endfor %}
+          <th style="text-align:center;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in participants %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>
+            <div style="font-weight:600;">{{ p.name }}</div>
+            {% if p.city %}<div style="font-size:0.78rem;color:var(--text-muted);">{{ p.city }}</div>{% endif %}
+          </td>
+          {% for r in p.rounds %}
+          <td style="text-align:center;">
+            <input type="text"
+                   name="time_{{ p.id }}_{{ r.round_number }}"
+                   class="time-input"
+                   value="{{ r.display }}"
+                   placeholder="00:00:00"/>
+          </td>
+          {% endfor %}
+          <td style="text-align:center;font-family:monospace;font-weight:700;color:var(--navy);">
+            {{ p.total_display }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:18px;display:flex;gap:10px;">
+    <button type="submit" class="btn btn-success">Save All Times</button>
+    <a href="/admin" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+
+{% else %}
+<div class="alert alert-info">
+  No participants yet.
+  <a href="/admin/tournament/{{ tournament.id }}/participants">Add participants first.</a>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Participants – {{ tournament.name }}{% endblock %}
+
+{% block content %}
+<h1>Participants: {{ tournament.name }}</h1>
+<div style="margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;">
+  <a href="/admin" class="btn btn-secondary btn-sm">← Dashboard</a>
+  <a href="/admin/tournament/{{ tournament.id }}/times" class="btn btn-primary btn-sm">Enter Times →</a>
+  <a href="/tournament/{{ tournament.id }}" target="_blank" class="btn btn-secondary btn-sm">View Public Page ↗</a>
+</div>
+
+<!-- ADD PARTICIPANT FORM -->
+<h2>Add Participant</h2>
+<form method="post" enctype="multipart/form-data"
+      action="/admin/tournament/{{ tournament.id }}/participants/add"
+      style="background:var(--white);padding:20px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:28px;">
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>Name *</label>
+      <input type="text" name="name" required placeholder="e.g. Ustad Ibrar Khan 03001234567"/>
+    </div>
+    <div class="form-group">
+      <label>City / Club</label>
+      <input type="text" name="city" placeholder="e.g. Piplan"/>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Number of Pigeons</label>
+      <input type="number" name="num_pigeons" value="{{ tournament.num_pigeons }}" min="1" max="100"/>
+    </div>
+    <div class="form-group">
+      <label>Pigeons Landed</label>
+      <input type="number" name="pigeons_landed" value="{{ tournament.num_pigeons }}" min="0" max="100"/>
+      <div class="form-hint">Used to calculate the published result summary.</div>
+    </div>
+    <div class="form-group">
+      <label>Profile Image</label>
+      <input type="file" name="image" accept="image/*"/>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-success">Add Participant</button>
+</form>
+
+<!-- PARTICIPANTS LIST -->
+<h2>Participants ({{ participants | length }})</h2>
+
+{% if participants %}
+<div class="table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Image</th>
+        <th>Name</th>
+        <th>City</th>
+        <th>Pigeons</th>
+        <th>Landed</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in participants %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>
+          {% if p.image %}
+          <img src="/static/uploads/participants/{{ p.image }}"
+               style="width:40px;height:40px;border-radius:50%;object-fit:cover;"/>
+          {% else %}
+          <div class="participant-img-placeholder" style="width:40px;height:40px;font-size:1rem;">👤</div>
+          {% endif %}
+        </td>
+        <td>{{ p.name }}</td>
+        <td>{{ p.city }}</td>
+        <td style="text-align:center;">{{ p.num_pigeons }}</td>
+        <td style="text-align:center;">{{ p.pigeons_landed }}</td>
+        <td>
+          <div class="action-btns">
+            <a href="/admin/participant/{{ p.id }}/edit" class="btn btn-sm btn-secondary">Edit</a>
+            <form method="post" action="/admin/participant/{{ p.id }}/delete"
+                  class="confirm-delete" style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">No participants added yet. Use the form above to add the first one.</div>
+{% endif %}
+
+{% endblock %}

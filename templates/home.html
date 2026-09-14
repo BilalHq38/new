@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Home – Pigeon flying Tournament{% endblock %}
+
+{% block content %}
+{% if home_banners %}
+<section class="landing-carousel" data-home-carousel aria-label="Landing page banners">
+  <div class="landing-carousel-slides">
+    {% for banner in home_banners %}
+    <figure class="landing-carousel-slide{% if loop.first %} is-active{% endif %}"
+            {% if not loop.first %}hidden{% endif %}
+            data-carousel-slide>
+      <img src="/static/uploads/site/{{ banner.filename }}" alt="Pigeon racing banner {{ loop.index }}"/>
+    </figure>
+    {% endfor %}
+  </div>
+
+  {% if home_banners | length > 1 %}
+  <button class="carousel-control carousel-control-previous" type="button" data-carousel-previous aria-label="Previous banner">‹</button>
+  <button class="carousel-control carousel-control-next" type="button" data-carousel-next aria-label="Next banner">›</button>
+  <div class="carousel-indicators" aria-label="Select a banner">
+    {% for banner in home_banners %}
+    <button type="button" class="carousel-indicator{% if loop.first %} is-active{% endif %}"
+            data-carousel-indicator="{{ loop.index0 }}" aria-label="Show banner {{ loop.index }}"
+            aria-current="{% if loop.first %}true{% else %}false{% endif %}"></button>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if settings.latest_news_text %}
+<section class="latest-news" aria-label="Latest news">
+  <div class="latest-news-inner">
+    <span class="latest-news-label">Latest news:</span>
+    <div class="latest-news-track">
+      <p>{{ settings.latest_news_text }}</p>
+      <p aria-hidden="true">{{ settings.latest_news_text }}</p>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<main class="home-page-body home-wide-content">
+  {% if all_tournaments %}
+  <section class="home-tournament-navigation" aria-label="All tournaments">
+    <div class="home-tournament-tags">
+      {% for t in all_tournaments %}
+      <a href="/tournament/{{ t.id }}" class="home-tournament-tag" title="Open {{ t.name }}">{{ t.name }}</a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if featured_tournament %}
+  <section class="home-leaderboard" aria-labelledby="home-leaderboard-title">
+    <div class="home-leaderboard-header">
+      <div>
+        <p class="home-kicker">Home leaderboard</p>
+        <h2 id="home-leaderboard-title">{{ featured_tournament.name }}</h2>
+      </div>
+      <a class="btn btn-primary btn-sm" href="/tournament/{{ featured_tournament.id }}">View full leaderboard</a>
+    </div>
+
+    <div class="table-wrap home-leaderboard-table-wrap">
+      <table class="home-leaderboard-table">
+        <thead>
+          <tr>
+            <th class="sr-col">SR</th>
+            <th class="pic-col">Pic</th>
+            <th>Name</th>
+            <th class="home-pigeons-col">Pigeons</th>
+            {% for rd in featured_round_dates %}
+            <th class="time-col">{{ rd | replace("-", ".") | regex_replace('^(\d{4})\.(\d{2})\.(\d{2})$', '\\3.\\2.\\1') }}</th>
+            {% endfor %}
+            <th class="time-col">Total time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in featured_participants %}
+          <tr>
+            <td class="sr-cell">{{ p.sr }}</td>
+            <td class="pic-cell">
+              {% if p.image %}
+              <img src="/static/uploads/participants/{{ p.image }}" alt="{{ p.name }}" class="participant-img"/>
+              {% else %}
+              <div class="participant-img-placeholder" aria-label="No participant photo">👤</div>
+              {% endif %}
+            </td>
+            <td>
+              <div class="participant-name">{{ p.name }}</div>
+              {% if p.city %}<div class="participant-city">{{ p.city }}</div>{% endif %}
+            </td>
+            <td class="home-pigeons-cell">{{ p.num_pigeons }}</td>
+            {% for round in p.rounds %}
+            <td class="time-cell {{ round.cell_class }}">{{ round.display }}</td>
+            {% endfor %}
+            <td class="total-cell">{{ p.total_display }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if not featured_participants %}
+    <p class="home-empty-state">No participants have been added to this tournament yet.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% set home_in_progress = in_progress | rejectattr("show_on_home", "equalto", 1) | list %}
+  {% if home_in_progress %}
+  <section class="home-simple-section" aria-labelledby="in-progress-title">
+    <h2 id="in-progress-title" class="home-section-heading"><span class="status-dot status-dot-progress"></span>In progress</h2>
+    <div class="home-simple-tournament-list">
+      {% for t in home_in_progress %}
+      <a href="/tournament/{{ t.id }}" class="home-simple-tournament">
+        {% if t.banner_image %}
+        <img src="/static/uploads/banners/{{ t.banner_image }}" alt="{{ t.name }}" class="home-simple-tournament-banner"/>
+        {% else %}
+        <div class="home-simple-tournament-banner-placeholder">🏆</div>
+        {% endif %}
+        <div class="home-simple-tournament-body">
+          <span class="home-simple-tournament-name">{{ t.name }}</span>
+          <span class="home-simple-tournament-meta">{{ t.template_label }} · Starts {{ t.start_date }}</span>
+          <span class="badge badge-in_progress">In progress</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% set home_upcoming = upcoming | rejectattr("show_on_home", "equalto", 1) | list %}
+  {% if home_upcoming %}
+  <section class="home-simple-section" aria-labelledby="upcoming-title">
+    <h2 id="upcoming-title" class="home-section-heading"><span class="status-dot status-dot-upcoming"></span>Upcoming</h2>
+    <div class="home-simple-tournament-list">
+      {% for t in home_upcoming %}
+      <a href="/tournament/{{ t.id }}" class="home-simple-tournament">
+        {% if t.banner_image %}
+        <img src="/static/uploads/banners/{{ t.banner_image }}" alt="{{ t.name }}" class="home-simple-tournament-banner"/>
+        {% else %}
+        <div class="home-simple-tournament-banner-placeholder">🏆</div>
+        {% endif %}
+        <div class="home-simple-tournament-body">
+          <span class="home-simple-tournament-name">{{ t.name }}</span>
+          <span class="home-simple-tournament-meta">{{ t.template_label }} · Starts {{ t.start_date }}</span>
+          <span class="badge badge-upcoming">Upcoming</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if not all_tournaments %}
+  <div class="home-empty-state">
+    <h2>No tournaments yet</h2>
+    <p>Tournaments will appear here once they are created and made visible.</p>
+  </div>
+  {% endif %}
+</main>
+{% endblock %}

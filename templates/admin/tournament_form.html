@@ -1,0 +1,98 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{% if tournament %}Edit Tournament{% else %}New Tournament{% endif %}{% endblock %}
+
+{% block content %}
+<h1>{% if tournament %}Edit Tournament{% else %}New Tournament{% endif %}</h1>
+
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+
+<form method="post" enctype="multipart/form-data"
+      action="{% if tournament %}/admin/tournament/{{ tournament.id }}/edit{% else %}/admin/tournament/new{% endif %}">
+
+  <div class="form-row">
+    <div class="form-group">
+      <label for="name">Tournament Name *</label>
+      <input type="text" id="name" name="name" required
+             value="{{ tournament.name if tournament else '' }}"/>
+    </div>
+    <div class="form-group">
+      <label for="template">Template *</label>
+      <select id="template" name="template" required>
+        {% for key, val in templates_map.items() %}
+        <option value="{{ key }}"
+          {% if tournament and tournament.template == key %}selected{% endif %}>
+          {{ val.label }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label for="start_date">Start Date (Round 1) *</label>
+      <input type="date" id="start_date" name="start_date" required
+             value="{{ tournament.start_date if tournament else '' }}"/>
+    </div>
+    <div class="form-group">
+      <label for="round_interval_days">Days Between Rounds</label>
+      <input type="number" id="round_interval_days" name="round_interval_days"
+             min="1" max="30"
+             value="{{ tournament.round_interval_days if tournament else 1 }}"/>
+      <div class="form-hint">e.g. 1 = every day, 2 = every 2 days</div>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label for="start_time">Daily Release Time *</label>
+      <input type="time" id="start_time" name="start_time"
+             value="{{ tournament.start_time if tournament else '05:00' }}"/>
+      <div class="form-hint">Time pigeons are released each day</div>
+    </div>
+    <div class="form-group">
+      <label for="banner_image">Banner Image</label>
+      <input type="file" id="banner_image" name="banner_image" accept="image/*"/>
+      {% if tournament and tournament.banner_image %}
+      <div class="form-hint">
+        Current: <img src="/static/uploads/banners/{{ tournament.banner_image }}"
+                      style="height:40px;margin-top:4px;border-radius:4px;"/>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="info_text">Tournament Info Text</label>
+    <textarea id="info_text" name="info_text">{{ tournament.info_text if tournament else '' }}</textarea>
+    <div class="form-hint">Shown in a box at the top of the leaderboard page</div>
+  </div>
+
+  <div class="form-group">
+    <label for="page_ticker_text">Tournament Page Floating Text</label>
+    <textarea id="page_ticker_text" name="page_ticker_text">{{ tournament.page_ticker_text if tournament else '' }}</textarea>
+    <div class="form-hint">Scrolling text shown below the tournament info box</div>
+  </div>
+
+  <div style="display:flex;gap:24px;margin-bottom:20px;">
+    <label class="form-check">
+      <input type="checkbox" name="is_visible" value="on"
+             {% if not tournament or tournament.is_visible %}checked{% endif %}/>
+      Visible to public
+    </label>
+    <label class="form-check">
+      <input type="checkbox" name="is_pinned" value="on"
+             {% if tournament and tournament.is_pinned %}checked{% endif %}/>
+      Pin to top of home page
+    </label>
+  </div>
+
+  <div style="display:flex;gap:10px;">
+    <button type="submit" class="btn btn-primary">
+      {% if tournament %}Save Changes{% else %}Create Tournament{% endif %}
+    </button>
+    <a href="/admin" class="btn btn-secondary">Cancel</a>
+  </div>
+
+</form>
+{% endblock %}

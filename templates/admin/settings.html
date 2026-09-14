@@ -1,0 +1,102 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<h1>Settings</h1>
+
+{% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+
+<!-- SITE SETTINGS -->
+<h2>Site Settings</h2>
+<form method="post" action="/admin/settings" enctype="multipart/form-data"
+      style="background:var(--white);padding:24px;border:1px solid var(--border);
+             border-radius:var(--radius);max-width:640px;margin-bottom:32px;">
+
+  <div class="form-group">
+    <label for="ticker_text">Announcement Ticker Text</label>
+    <textarea id="ticker_text" name="ticker_text">{{ settings.ticker_text }}</textarea>
+    <div class="form-hint">Scrolling text shown at the very top of every page</div>
+  </div>
+
+  <div class="form-group">
+    <label for="detail_ticker_text">Default Tournament Page Ticker Text</label>
+    <textarea id="detail_ticker_text" name="detail_ticker_text">{{ settings.detail_ticker_text }}</textarea>
+    <div class="form-hint">Fallback scrolling text used when a tournament has no custom text</div>
+  </div>
+
+  <div class="form-group">
+    <label for="home_banner_images">Landing Page Banner Carousel ({{ home_banners | length }}/5)</label>
+    <input id="home_banner_images" name="home_banner_images" type="file" accept="image/*" multiple/>
+    <div class="form-hint">
+      Upload up to five banners. They switch automatically every 5 seconds in upload order.
+      Recommended size: <strong>1920 × 350 pixels</strong> (4.8:1). Use the same dimensions for every banner.
+    </div>
+
+    {% if home_banners %}
+    <div class="settings-banner-grid">
+      {% for banner in home_banners %}
+      <figure class="settings-banner-card">
+        <img src="/static/uploads/site/{{ banner.filename }}" alt="Landing banner {{ loop.index }}"/>
+        <figcaption>
+          <span>Banner {{ loop.index }}</span>
+          <button type="submit" class="btn btn-danger btn-sm"
+                  formaction="/admin/settings/banner/{{ banner.id }}/delete"
+                  formmethod="post"
+                  onclick="return confirm('Remove this banner?');">Remove</button>
+        </figcaption>
+      </figure>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="form-group">
+    <label for="latest_news_text">Latest News</label>
+    <textarea id="latest_news_text" name="latest_news_text">{{ settings.latest_news_text }}</textarea>
+    <div class="form-hint">Shown in the highlighted Latest News strip on the public home page. Leave blank to hide the strip.</div>
+  </div>
+
+  <div class="form-group">
+    <label for="contact_content">Contact Page Content</label>
+    <textarea id="contact_content" name="contact_content"
+              style="min-height:120px;">{{ settings.contact_content }}</textarea>
+    <div class="form-hint">Phone numbers, WhatsApp, address — shown on the Contact page</div>
+  </div>
+
+  <div class="form-group">
+    <label for="home_display_mode">Home Page Display Mode</label>
+    <select id="home_display_mode" name="home_display_mode">
+      <option value="all"       {% if settings.home_display_mode == 'all'       %}selected{% endif %}>Show All Visible Tournaments</option>
+      <option value="active"    {% if settings.home_display_mode == 'active'    %}selected{% endif %}>Show Only In Progress and Upcoming</option>
+      <option value="completed" {% if settings.home_display_mode == 'completed' %}selected{% endif %}>Show Only Completed</option>
+      <option value="latest"    {% if settings.home_display_mode == 'latest'    %}selected{% endif %}>Show Latest Tournament Only</option>
+    </select>
+    <div class="form-hint">Controls which tournaments appear on the public home page</div>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Save Settings</button>
+</form>
+
+<!-- CHANGE PASSWORD -->
+<h2>Change Admin Password</h2>
+<form method="post" action="/admin/settings/password"
+      style="background:var(--white);padding:24px;border:1px solid var(--border);
+             border-radius:var(--radius);max-width:400px;">
+
+  <div class="form-group">
+    <label>Current Password</label>
+    <input type="password" name="current_password" required/>
+  </div>
+  <div class="form-group">
+    <label>New Password</label>
+    <input type="password" name="new_password" required minlength="6"/>
+  </div>
+  <div class="form-group">
+    <label>Confirm New Password</label>
+    <input type="password" name="confirm_password" required/>
+  </div>
+  <button type="submit" class="btn btn-warning">Update Password</button>
+</form>
+
+{% endblock %}

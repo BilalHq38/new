@@ -1,0 +1,46 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Edit Participant{% endblock %}
+
+{% block content %}
+<h1>Edit Participant</h1>
+
+<form method="post" enctype="multipart/form-data"
+      action="/admin/participant/{{ participant.id }}/edit"
+      style="background:var(--white);padding:24px;border:1px solid var(--border);
+             border-radius:var(--radius);max-width:560px;">
+
+  <div class="form-group">
+    <label>Name *</label>
+    <input type="text" name="name" required value="{{ participant.name }}"/>
+  </div>
+  <div class="form-group">
+    <label>City / Club</label>
+    <input type="text" name="city" value="{{ participant.city }}"/>
+  </div>
+  <div class="form-group">
+    <label>Number of Pigeons</label>
+    <input type="number" name="num_pigeons" value="{{ participant.num_pigeons }}" min="1" max="100"/>
+  </div>
+  <div class="form-group">
+    <label>Pigeons Landed</label>
+    <input type="number" name="pigeons_landed" value="{{ participant.pigeons_landed }}" min="0" max="100"/>
+    <div class="form-hint">The published summary adds these values across all lofts.</div>
+  </div>
+  <div class="form-group">
+    <label>Profile Image</label>
+    {% if participant.image %}
+    <div style="margin-bottom:8px;">
+      <img src="/static/uploads/participants/{{ participant.image }}"
+           style="width:64px;height:64px;border-radius:50%;object-fit:cover;"/>
+    </div>
+    {% endif %}
+    <input type="file" name="image" accept="image/*"/>
+    <div class="form-hint">Leave empty to keep current image</div>
+  </div>
+
+  <div style="display:flex;gap:10px;">
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}
