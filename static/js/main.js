@@ -1,14 +1,42 @@
-// ─── LIVE CLOCK ───
-function updateClock() {
+// ─── LIVE CLOCK (date on top, time below) ───
+(function initClock() {
   const el = document.getElementById("live-clock");
   if (!el) return;
-  const now = new Date();
-  const pad = n => String(n).padStart(2, "0");
-  el.textContent =
-    `${now.getDate().toString().padStart(2,"0")}.${pad(now.getMonth()+1)}.${now.getFullYear()}  ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-}
-setInterval(updateClock, 1000);
-updateClock();
+  // Build inner structure once
+  el.innerHTML = '<span class="navbar-clock-date"></span><span class="navbar-clock-time"></span>';
+  const dateEl = el.querySelector(".navbar-clock-date");
+  const timeEl = el.querySelector(".navbar-clock-time");
+  function tick() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, "0");
+    dateEl.textContent = `${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}`;
+    timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+}());
+
+// ─── FOOTER HIDE AT BOTTOM ───
+(function initFooterHide() {
+  const footer = document.querySelector(".site-footer");
+  if (!footer) return;
+  let ticking = false;
+  function checkScroll() {
+    // Hide footer when within ~60 px of the document bottom
+    const scrollBottom = window.scrollY + window.innerHeight;
+    const docHeight = document.documentElement.scrollHeight;
+    if (docHeight - scrollBottom < 60) {
+      footer.classList.add("footer-hidden");
+    } else {
+      footer.classList.remove("footer-hidden");
+    }
+    ticking = false;
+  }
+  window.addEventListener("scroll", function () {
+    if (!ticking) { requestAnimationFrame(checkScroll); ticking = true; }
+  }, { passive: true });
+  checkScroll();
+}());
 
 // ─── HAMBURGER MENU ───
 const hamburger = document.getElementById("hamburger");

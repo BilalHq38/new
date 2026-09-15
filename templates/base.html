@@ -30,6 +30,9 @@
 </head>
 <body>
 
+<!-- STICKY SITE HEADER: ticker + navbar stick together -->
+<header class="site-header">
+
 <!-- TICKER -->
 <div class="ticker-wrap site-ticker" aria-label="Announcements">
   <div class="ticker-track persistent-ticker-track">
@@ -54,7 +57,10 @@
     </a>
 
     <div class="navbar-meta">
-      <span id="live-clock" class="navbar-meta-clock">{{ now.strftime('%d.%m.%Y %H:%M:%S') }}</span>
+      <span id="live-clock" class="navbar-meta-clock">
+        <span class="navbar-clock-date">{{ now.strftime('%d.%m.%Y') }}</span>
+        <span class="navbar-clock-time">{{ now.strftime('%H:%M:%S') }}</span>
+      </span>
       <span class="navbar-meta-online">🟢 Online: {{ online_count }}</span>
     </div>
 
@@ -111,6 +117,7 @@
     </ul>
   </div>
 </nav>
+</header>
 
 <!-- PAGE CONTENT -->
 {% block content %}{% endblock %}

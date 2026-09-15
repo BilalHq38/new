@@ -20,12 +20,14 @@
   --site-ticker-delay: 0s;
 }
 
-html { font-size: 15px; scroll-behavior: smooth; }
+html { font-size: 15px; scroll-behavior: smooth; overflow-x: hidden; }
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 a { color: var(--navy); text-decoration: none; }
@@ -68,6 +70,7 @@ img { max-width: 100%; height: auto; display: block; }
   padding: 7px 0;
   overflow: hidden;
   white-space: nowrap;
+  max-width: 100%;
 }
 .ticker-track {
   display: flex;
@@ -97,13 +100,19 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 /* ─── NAVBAR ─── */
-.navbar {
-  background: var(--teal);
-  padding: 0;
+.site-header {
   position: sticky;
   top: 0;
   z-index: 1000;
+  overflow: hidden;
+  max-width: 100%;
+}
+.navbar {
+  background: var(--teal);
+  padding: 0;
   box-shadow: var(--shadow);
+  overflow: hidden;
+  max-width: 100%;
 }
 
 /* Top bar: spans full viewport width, logo left, meta right */
@@ -128,20 +137,36 @@ img { max-width: 100%; height: auto; display: block; }
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: 1px;
   line-height: 1.2;
 }
+/* Date shown above time — JS splits them into two spans */
 .navbar-meta-clock {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: rgba(255,255,255,0.97);
   font-family: 'Courier New', monospace;
   letter-spacing: 0.04em;
   white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+}
+.navbar-clock-date {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.80);
+  letter-spacing: 0.04em;
+}
+.navbar-clock-time {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.97);
 }
 .navbar-meta-online {
-  font-size: 0.74rem;
-  color: rgba(255,255,255,0.72);
+  font-size: 0.70rem;
+  color: rgba(255,255,255,0.65);
   white-space: nowrap;
   text-align: right;
 }
@@ -236,7 +261,8 @@ img { max-width: 100%; height: auto; display: block; }
   margin: 0 auto;
   padding: 0 16px;
 }
-.page-body { padding: 24px 0 76px; }
+/* Bottom padding accounts for the fixed footer height */
+.page-body { padding: 14px 0 60px; }
 
 .site-footer {
   position: fixed;
@@ -246,13 +272,20 @@ img { max-width: 100%; height: auto; display: block; }
   z-index: 900;
   background: var(--navy);
   color: rgba(255,255,255,0.72);
-  padding: 14px 24px;
+  padding: 10px 24px;
   font-size: 0.8rem;
   box-shadow: 0 -2px 8px rgba(0,0,0,0.12);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  /* Footer hides when user scrolls near the bottom */
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.site-footer.footer-hidden {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
 }
 .site-footer .footer-right {
   color: rgba(255,255,255,0.5);
@@ -267,9 +300,10 @@ img { max-width: 100%; height: auto; display: block; }
   padding-right: clamp(14px, 3vw, 56px);
   padding-left: clamp(14px, 3vw, 56px);
 }
+/* Home carousel also uses 16:5 — all banners are the same ratio across the site */
 .landing-carousel {
   position: relative;
-  aspect-ratio: 1920 / 350;
+  aspect-ratio: 16 / 5;
   height: auto;
   margin: 14px clamp(8px, 0.75vw, 18px) 0;
   overflow: hidden;
@@ -328,7 +362,7 @@ img { max-width: 100%; height: auto; display: block; }
   background: #fff8e4;
   border-top: 1px solid #f0e0a7;
   border-bottom: 1px solid #f0e0a7;
-  margin-top: 14px;
+  margin-top: 0;
   overflow: hidden;
   white-space: nowrap;
 }
@@ -521,9 +555,10 @@ img { max-width: 100%; height: auto; display: block; }
 .status-dot-upcoming { background: #3787cf; }
 
 /* ─── BANNER ─── */
+/* All site banners use a fixed 16:5 ratio (1920×600). AI-generate at 1920×600. */
 .tournament-banner {
   width: 100%;
-  max-height: 280px;
+  aspect-ratio: 16 / 5;
   object-fit: cover;
   display: block;
 }
@@ -532,19 +567,19 @@ img { max-width: 100%; height: auto; display: block; }
 .tournament-header {
   background: var(--white);
   border-bottom: 2px solid var(--border);
-  padding: 18px 20px 14px;
+  padding: 10px 20px 8px;
 }
 .tournament-header h1 {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--navy);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 10px;
+  gap: 4px 8px;
 }
 .tournament-header .start-time {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
   font-weight: 400;
   margin-left: 0;
@@ -555,19 +590,19 @@ img { max-width: 100%; height: auto; display: block; }
   background: #fffbe6;
   border: 1px solid #f0e08a;
   border-radius: var(--radius);
-  padding: 10px 16px;
-  margin: 14px 0;
-  font-size: 0.9rem;
+  padding: 8px 14px;
+  margin: 8px 0;
+  font-size: 0.88rem;
   color: #7a6500;
 }
 .tournament-ticker {
-  margin: 14px 0;
+  margin: 8px 0;
   border-radius: var(--radius);
 }
 
 /* Published result totals */
 .published-summary {
-  margin: 16px 0;
+  margin: 8px 0;
   overflow: hidden;
   background: var(--white);
   border: 1px solid var(--border);
@@ -604,7 +639,7 @@ img { max-width: 100%; height: auto; display: block; }
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  padding: 14px 0 10px;
+  padding: 8px 0 6px;
   align-items: center;
 }
 .date-tab {
@@ -629,7 +664,7 @@ img { max-width: 100%; height: auto; display: block; }
 .search-wrap {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 .search-input {
   padding: 7px 12px;
@@ -643,12 +678,15 @@ img { max-width: 100%; height: auto; display: block; }
 .search-input:focus { border-color: var(--teal); }
 
 /* ─── TABLE ─── */
-.table-wrap { overflow-x: auto; }
+/* On tournament public pages the table expands to full width with no scroll —
+   columns are compact enough to fit. Admin tables still scroll via .admin-table-wrap. */
+.table-wrap { overflow-x: auto; max-width: 100%; }
+.no-scroll-wrap { overflow-x: visible; max-width: 100%; }
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
-  min-width: 480px;
+  min-width: 0;
 }
 thead th {
   background: var(--teal);
@@ -658,9 +696,9 @@ thead th {
   font-weight: 600;
   white-space: nowrap;
 }
-thead th.sr-col { width: 42px; text-align: center; }
-thead th.pic-col { width: 58px; text-align: center; }
-thead th.time-col { text-align: center; }
+thead th.sr-col { width: 30px; text-align: center; }
+thead th.pic-col { width: 44px; text-align: center; }
+thead th.time-col { text-align: center; min-width: 0; white-space: nowrap; }
 
 tbody tr:nth-child(odd)  { background: var(--white); }
 tbody tr:nth-child(even) { background: var(--light-blue); }
@@ -716,12 +754,13 @@ td.time-zero { color: #aab; }
 /* ─── STATUS BADGES ─── */
 .badge {
   display: inline-block;
-  padding: 3px 9px;
-  border-radius: 20px;
-  font-size: 0.76rem;
-  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  line-height: 1.5;
 }
 .badge-upcoming   { background: #e8f4ff; color: #1a5a9a; border: 1px solid #b0d4f0; }
 .badge-in_progress { background: #fff3cd; color: #856404; border: 1px solid #f0d080; }
@@ -1107,28 +1146,40 @@ td.time-zero { color: #aab; }
 }
 
 @media (max-width: 480px) {
-  .container { padding: 0 12px; }
-  .page-body { padding-top: 18px; }
-  .home-wide-content { padding-right: 12px; padding-left: 12px; }
-  .landing-carousel { margin: 8px 8px 0; }
-  .carousel-control { width: 34px; height: 44px; font-size: 1.8rem; }
-  .home-page-body { padding-top: 18px; }
-  .home-leaderboard-header { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .container { padding: 0 8px; }
+  .page-body { padding-top: 10px; }
+  .home-wide-content { padding-right: 8px; padding-left: 8px; }
+  .landing-carousel { margin: 6px 6px 0; }
+  .carousel-control { width: 30px; height: 40px; font-size: 1.6rem; }
+  .home-page-body { padding-top: 14px; }
+  .home-leaderboard-header { align-items: flex-start; flex-direction: column; gap: 8px; }
   .home-simple-tournament { grid-template-columns: 1fr; }
   .home-simple-tournament .badge { grid-row: auto; grid-column: auto; justify-self: start; }
   .latest-news-inner { align-items: flex-start; flex-direction: column; gap: 3px; }
-  .latest-news-label { font-size: 0.94rem; }
+  .latest-news-label { font-size: 0.9rem; }
   .published-summary-heading { align-items: flex-start; flex-direction: column; gap: 2px; }
-  .published-summary-values { gap: 7px 14px; font-size: 0.9rem; }
-  .tournament-header { padding: 14px 0 12px; }
-  .tournament-header h1 { font-size: 1.12rem; }
-  .tournament-header .start-time { font-size: 0.86rem; }
+  .published-summary-values { gap: 5px 10px; font-size: 0.84rem; }
+  .tournament-header { padding: 8px 10px 6px; }
+  .tournament-header h1 { font-size: 1rem; }
+  .tournament-header .start-time { font-size: 0.8rem; }
   .tournament-index-grid,
   .tournament-grid { grid-template-columns: 1fr; }
   .card-banner,
-  .card-banner-placeholder { height: 120px; }
-  .date-tabs { gap: 3px; }
-  .date-tab { padding: 5px 10px; font-size: 0.8rem; }
-  table { font-size: 0.82rem; }
-  td, thead th { padding: 7px 8px; }
+  .card-banner-placeholder { height: 100px; }
+  .date-tabs { gap: 3px; padding: 6px 0 4px; }
+  .date-tab { padding: 4px 7px; font-size: 0.74rem; }
+  /* Tournament table: tiny but readable on phone, no scrollbar */
+  table { font-size: 0.72rem; }
+  td, thead th { padding: 5px 4px; }
+  thead th.sr-col { width: 22px; }
+  thead th.pic-col { width: 32px; }
+  .participant-img,
+  .participant-img-placeholder { width: 28px; height: 28px; font-size: 0.8rem; }
+  .participant-name { font-size: 0.78rem; }
+  .participant-city { font-size: 0.66rem; }
+  td.time-cell, td.total-cell { font-size: 0.72rem; }
+  .search-input { width: 100%; font-size: 0.82rem; }
+  .search-wrap { justify-content: stretch; }
+  .navbar-meta-clock { font-size: 0.68rem; }
+  .navbar-clock-time { font-size: 0.76rem; }
 }
