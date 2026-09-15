@@ -28,6 +28,7 @@
             </span>
           </th>
           {% endfor %}
+          <th style="text-align:center;">Landed</th>
           <th style="text-align:center;">Total</th>
         </tr>
       </thead>
@@ -48,6 +49,15 @@
                    placeholder="00:00:00"/>
           </td>
           {% endfor %}
+          <td style="text-align:center;">
+            <input type="number"
+                   name="landed_{{ p.id }}"
+                   value="{{ p.pigeons_landed }}"
+                   min="0"
+                   max="{{ p.num_pigeons }}"
+                   style="width:60px;padding:5px 6px;border:1px solid var(--border);border-radius:4px;text-align:center;font-size:0.88rem;"
+                   title="Pigeons that landed"/>
+          </td>
           <td style="text-align:center;font-family:monospace;font-weight:700;color:var(--navy);">
             {{ p.total_display }}
           </td>

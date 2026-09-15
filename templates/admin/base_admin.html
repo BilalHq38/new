@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}Admin{% endblock %} – Pigeon flying Tournament</title>
+  <title>{% block title %}Admin{% endblock %} – Gazi Imam Champions</title>
   <link rel="stylesheet" href="/static/css/style.css"/>
 </head>
 <body>
@@ -11,7 +11,7 @@
 
   <!-- SIDEBAR -->
   <aside class="admin-sidebar">
-    <h2>🏆 Admin Panel</h2>
+    <h2>🕊️ Admin Panel</h2>
     <a href="/admin" class="{% if request.url.path == '/admin' %}active{% endif %}">Dashboard</a>
     <a href="/admin/tournament/new">+ New Tournament</a>
     <a href="/admin/settings" class="{% if '/settings' in request.url.path %}active{% endif %}">Settings</a>

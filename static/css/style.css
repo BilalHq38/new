@@ -32,6 +32,39 @@ a { color: var(--navy); text-decoration: none; }
 a:hover { text-decoration: underline; }
 img { max-width: 100%; height: auto; display: block; }
 
+/* ─── NAVBAR BRAND ─── */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  padding: 6px 0;
+  flex: 0 0 auto;
+}
+.navbar-brand:hover { text-decoration: none; }
+.navbar-logo {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+.navbar-brand-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+/* ─── BACK BUTTON ─── */
+.nav-back-btn {
+  font-size: 0.85rem !important;
+  opacity: 0.8;
+  padding: 14px 12px !important;
+}
+.nav-back-btn:hover { opacity: 1; }
+
 /* ─── TICKER ─── */
 .ticker-wrap {
   background: var(--navy);
@@ -85,6 +118,12 @@ img { max-width: 100%; height: auto; display: block; }
   padding: 0 16px;
   flex-wrap: wrap;
   gap: 0;
+}
+.nav-hamburger-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 .navbar-meta {
   font-size: 0.78rem;
