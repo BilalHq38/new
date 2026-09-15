@@ -6,42 +6,13 @@
   <title>{% block title %}Gazi Imam Champions{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="/static/images/logo.svg"/>
   <link rel="stylesheet" href="/static/css/style.css"/>
-  <script>
-    (function () {
-      const duration = 36000;
-      let phase = 0;
-      try {
-        const saved = JSON.parse(sessionStorage.getItem("site-ticker-phase") || "null");
-        if (saved && typeof saved.phase === "number" && typeof saved.savedAt === "number") {
-          phase = (saved.phase + Math.max(0, Date.now() - saved.savedAt)) % duration;
-        }
-      } catch (error) { phase = 0; }
-      document.documentElement.style.setProperty("--site-ticker-delay", `${-(phase / 1000)}s`);
-      window.__siteTickerStartedAt = performance.now() - phase;
-      window.addEventListener("pagehide", function () {
-        try {
-          const currentPhase = (performance.now() - window.__siteTickerStartedAt) % duration;
-          sessionStorage.setItem("site-ticker-phase", JSON.stringify({ phase: currentPhase, savedAt: Date.now() }));
-        } catch (error) {}
-      });
-    }());
-  </script>
+
   {% block head %}{% endblock %}
 </head>
 <body>
 
 <!-- STICKY SITE HEADER: ticker + navbar stick together -->
 <header class="site-header">
-
-<!-- TICKER -->
-<div class="ticker-wrap site-ticker" aria-label="Announcements">
-  <div class="ticker-track persistent-ticker-track">
-    <span class="ticker-item" dir="auto">{{ settings.ticker_text }}</span>
-    <span class="ticker-item" dir="auto" aria-hidden="true">{{ settings.ticker_text }}</span>
-    <span class="ticker-item" dir="auto" aria-hidden="true">{{ settings.ticker_text }}</span>
-    <span class="ticker-item" dir="auto" aria-hidden="true">{{ settings.ticker_text }}</span>
-  </div>
-</div>
 
 <!-- NAVBAR -->
 <nav class="navbar">

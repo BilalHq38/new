@@ -31,10 +31,12 @@
 {% if settings.latest_news_text %}
 <section class="latest-news" aria-label="Latest news">
   <div class="latest-news-inner">
-    <span class="latest-news-label">Latest news:</span>
-    <div class="latest-news-track">
-      <p>{{ settings.latest_news_text }}</p>
-      <p aria-hidden="true">{{ settings.latest_news_text }}</p>
+    <span class="latest-news-label">Latest news</span>
+    <div class="latest-news-scroll">
+      <div class="latest-news-track">
+        <p>{{ settings.latest_news_text }}</p>
+        <p aria-hidden="true">{{ settings.latest_news_text }}</p>
+      </div>
     </div>
   </div>
 </section>

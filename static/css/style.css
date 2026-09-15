@@ -17,7 +17,6 @@
   --warning:    #ffc107;
   --radius:     6px;
   --shadow:     0 2px 8px rgba(0,0,0,0.10);
-  --site-ticker-delay: 0s;
 }
 
 html { font-size: 15px; scroll-behavior: smooth; overflow-x: hidden; }
@@ -63,11 +62,11 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .nav-back-btn:hover { opacity: 1 !important; }
 
-/* ─── TICKER ─── */
+/* ─── TOURNAMENT PAGE TICKER (inside tournament detail, not the removed site bar) ─── */
 .ticker-wrap {
   background: var(--navy);
   color: var(--white);
-  padding: 7px 0;
+  padding: 6px 0;
   overflow: hidden;
   white-space: nowrap;
   max-width: 100%;
@@ -77,7 +76,6 @@ img { max-width: 100%; height: auto; display: block; }
   width: max-content;
   direction: ltr;
   animation: ticker-scroll-right 36s linear infinite;
-  animation-delay: var(--site-ticker-delay);
   will-change: transform;
   backface-visibility: hidden;
   transform: translate3d(-50%, 0, 0);
@@ -86,7 +84,7 @@ img { max-width: 100%; height: auto; display: block; }
   display: block;
   flex: 0 0 auto;
   padding: 0 3rem;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   letter-spacing: 0.02em;
   unicode-bidi: plaintext;
 }
@@ -94,7 +92,6 @@ img { max-width: 100%; height: auto; display: block; }
   from { transform: translate3d(-50%, 0, 0); }
   to   { transform: translate3d(0, 0, 0); }
 }
-
 @media (prefers-reduced-motion: reduce) {
   .ticker-track { animation: none; transform: none; }
 }
@@ -358,54 +355,79 @@ img { max-width: 100%; height: auto; display: block; }
   cursor: pointer;
 }
 .carousel-indicator.is-active { background: var(--white); }
+/* ─── LATEST NEWS BAR ─── */
+/*
+ * Layout: the bar is split into two parts using a grid:
+ *   [LABEL | scrolling track]
+ * The label column is auto-sized (shrinks to content) and sits in normal flow.
+ * The track column fills the remaining space and clips overflow — the animation
+ * runs only inside that column so it can never bleed under the label.
+ */
 .latest-news {
-  background: #fff8e4;
-  border-top: 1px solid #f0e0a7;
-  border-bottom: 1px solid #f0e0a7;
-  margin-top: 0;
+  background: #fffdf0;
+  border-bottom: 1px solid #e8d87a;
   overflow: hidden;
-  white-space: nowrap;
 }
 .latest-news-inner {
-  display: flex;
-  align-items: center;
-  min-height: 46px;
-  padding: 0;
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: auto 1fr;  /* label | scrolling area */
+  align-items: stretch;
+  height: 32px;
 }
 .latest-news-label {
-  flex: 0 0 auto;
-  color: #b42318;
-  font-weight: 800;
-  font-size: 1rem;
-  padding: 0 14px;
-  z-index: 1;
-  background: #fff8e4;
-  border-right: 2px solid #f0e0a7;
-  align-self: stretch;
+  /* fixed left column — never scrolls */
   display: flex;
   align-items: center;
+  gap: 5px;
+  padding: 0 12px;
+  background: #e8b000;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   white-space: nowrap;
+  position: relative;
+  z-index: 1;
+  /* right shadow keeps a visual separation without overlap */
+  box-shadow: 3px 0 6px rgba(200,140,0,0.35);
+}
+.latest-news-label::before {
+  content: "📢";
+  font-size: 0.78rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+/* scrolling column — clips track strictly to its own area */
+.latest-news-scroll {
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 .latest-news-track {
   display: flex;
   width: max-content;
-  animation: news-scroll-right 18s linear infinite;
+  animation: news-scroll-right 22s linear infinite;
   will-change: transform;
+  white-space: nowrap;
 }
 .latest-news-track p {
-  color: #55411f;
-  font-size: 0.95rem;
+  color: #5a3d00;
+  font-size: 0.82rem;
   font-weight: 600;
-  padding: 11px 60px 11px 30px;
+  padding: 0 60px 0 20px;
   white-space: nowrap;
+  line-height: 32px;
 }
 @keyframes news-scroll-right {
   from { transform: translateX(-50%); }
   to   { transform: translateX(0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .latest-news-track { animation: none; }
+  .latest-news-track { animation: none; transform: translateX(0); }
+  .latest-news-track p:not(:first-child) { display: none; }
+  .latest-news-track p { padding-left: 14px; }
 }
 .home-page-body {
   padding-top: 26px;
@@ -1155,8 +1177,9 @@ td.time-zero { color: #aab; }
   .home-leaderboard-header { align-items: flex-start; flex-direction: column; gap: 8px; }
   .home-simple-tournament { grid-template-columns: 1fr; }
   .home-simple-tournament .badge { grid-row: auto; grid-column: auto; justify-self: start; }
-  .latest-news-inner { align-items: flex-start; flex-direction: column; gap: 3px; }
-  .latest-news-label { font-size: 0.9rem; }
+  /* latest-news stays single row on all screens — label shrinks slightly */
+  .latest-news-label { font-size: 0.64rem; padding: 0 7px; gap: 3px; }
+  .latest-news-track p { font-size: 0.76rem; line-height: 32px; padding: 0 40px 0 14px; }
   .published-summary-heading { align-items: flex-start; flex-direction: column; gap: 2px; }
   .published-summary-values { gap: 5px 10px; font-size: 0.84rem; }
   .tournament-header { padding: 8px 10px 6px; }
