@@ -71,38 +71,65 @@ if (searchInput) {
 }
 
 // ─── DATE TABS ───
+// On mobile (≤600 px) the "Total" tab shows only SR · Pic · Name · 🐦 total · Total Time.
+// The individual day columns (.desktop-day-col) are hidden on mobile in total view —
+// the user taps a day tab to drill into a single day instead.
+// On desktop all day columns remain visible in the total view.
+
+function isMobile() { return window.innerWidth <= 600; }
+
 function activateTab(tabEl, colClass) {
-  // deactivate all tabs
   document.querySelectorAll(".date-tab").forEach(t => t.classList.remove("active"));
   tabEl.classList.add("active");
 
-  // hide all round columns and total columns first
+  // Hide everything first
   document.querySelectorAll(".round-col").forEach(col => col.style.display = "none");
   document.querySelectorAll(".total-col").forEach(c => c.style.display = "none");
 
   if (colClass === "total") {
-    // Total tab: show all day-time columns but NOT per-day pigeons columns
-    document.querySelectorAll(".round-col").forEach(col => {
-      if (!col.classList.contains("pigeons-day-col")) {
-        col.style.display = "";
-      }
-    });
-    // Show total columns (total time + total pigeons)
+    // Always show total pigeons + total time columns
     document.querySelectorAll(".total-col").forEach(c => c.style.display = "");
+
+    if (isMobile()) {
+      // Mobile total view: NO per-day columns — keep it to 5 cols max
+      // desktop-day-col stays hidden; pigeons-day-col already hidden
+    } else {
+      // Desktop total view: show all day-time columns (not per-day pigeons)
+      document.querySelectorAll(".round-col").forEach(col => {
+        if (!col.classList.contains("pigeons-day-col")) {
+          col.style.display = "";
+        }
+      });
+    }
   } else {
-    // Specific day tab: show that day's time + pigeons columns, hide total cols
+    // Specific day tab (works same on all screen sizes):
+    // show that day's time + pigeons columns only, hide total cols
     document.querySelectorAll(`.${colClass}`).forEach(c => c.style.display = "");
+  }
+
+  // Scroll the active tab into view inside the scrollable strip
+  if (tabEl.scrollIntoView) {
+    tabEl.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
   }
 }
 
 document.querySelectorAll(".date-tab").forEach(tab => {
   tab.addEventListener("click", function () {
-    const col = this.dataset.col;
-    activateTab(this, col);
+    activateTab(this, this.dataset.col);
   });
 });
 
-// activate Total tab by default
+// Re-apply active tab on resize (desktop ↔ mobile toggle)
+let _resizeTimer;
+window.addEventListener("resize", function () {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(function () {
+    const activeTab = document.querySelector(".date-tab.active");
+    if (activeTab) activateTab(activeTab, activeTab.dataset.col);
+  }, 120);
+});
+
+// Activate Total tab by default
 const totalTab = document.querySelector(".date-tab[data-col='total']");
 if (totalTab) activateTab(totalTab, "total");
 

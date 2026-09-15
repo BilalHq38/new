@@ -55,49 +55,60 @@
   </div>
   {% endif %}
 
-  <!-- DATE TABS -->
-  <div class="date-tabs">
-    {% for rd in round_dates %}
-    <a class="date-tab" data-col="round-{{ loop.index }}" href="javascript:void(0)">
-      Day {{ loop.index }}<br/>
-      <span style="font-size:0.76rem;font-weight:400;">
-        {{ rd | replace("-", ".") | regex_replace('^(\d{4})\.(\d{2})\.(\d{2})$', '\\3.\\2.\\1') }}
-      </span>
-    </a>
-    {% endfor %}
-    <a class="date-tab active" data-col="total" href="javascript:void(0)">Total</a>
+  <!-- DATE TABS: horizontal scrolling strip so 15 tabs never wrap -->
+  <div class="date-tabs-wrap">
+    <div class="date-tabs">
+      {% for rd in round_dates %}
+      <a class="date-tab" data-col="round-{{ loop.index }}" href="javascript:void(0)">
+        <span class="date-tab-day">D{{ loop.index }}</span>
+        <span class="date-tab-date">{{ rd | replace("-", ".") | regex_replace('^(\d{4})\.(\d{2})\.(\d{2})$', '\\3.\\2') }}</span>
+      </a>
+      {% endfor %}
+      <a class="date-tab date-tab-total active" data-col="total" href="javascript:void(0)">
+        <span class="date-tab-day">Total</span>
+      </a>
+    </div>
   </div>
 
   <!-- SEARCH -->
   <div class="search-wrap">
-    <input type="text" id="search-input" class="search-input" placeholder="Search by name, city..."/>
+    <input type="text" id="search-input" class="search-input" placeholder="Search by name, city…"/>
   </div>
 
-  <!-- TABLE -->
-  <div class="no-scroll-wrap">
-    <table>
+  <!-- TABLE
+       On mobile (≤600px) the "total" view shows only: SR · Pic · Name · Pigeons · Total Time
+       Individual day tabs show: SR · Pic · Name · Pigeons(day) · Time(day)
+       On desktop all day columns are visible in the total view as before.
+  -->
+  <div class="t-wrap">
+    <table class="leaderboard-table">
       <thead>
         <tr>
           <th class="sr-col">SR</th>
           <th class="pic-col">Pic</th>
-          <th>Name</th>
-          <!-- Per-day pigeons column: shown only when a specific day tab is active -->
+          <th class="name-col">Name</th>
+
+          <!-- per-day pigeons: only when that day tab is active -->
           {% for rd in round_dates %}
           <th class="time-col round-col round-{{ loop.index }} pigeons-day-col" style="display:none;">
-            Pigeons<br/><span style="font-size:0.74rem;font-weight:400;">Day {{ loop.index }}</span>
+            🐦<br/><span style="font-size:0.7rem;font-weight:400;">D{{ loop.index }}</span>
           </th>
           {% endfor %}
-          <!-- Total pigeons col: shown only on Total tab -->
-          <th class="time-col total-col">Pigeons</th>
+
+          <!-- total pigeons: total tab only -->
+          <th class="time-col total-col">🐦</th>
+
+          <!-- per-day times: visible on that day's tab; on mobile also hidden on total tab -->
           {% for rd in round_dates %}
-          <th class="time-col round-col round-{{ loop.index }}">
-            Day {{ loop.index }}<br/>
-            <span style="font-size:0.76rem;font-weight:400;">
-              {{ rd | replace("-", ".") | regex_replace('^(\d{4})\.(\d{2})\.(\d{2})$', '\\3.\\2.\\1') }}
+          <th class="time-col round-col round-{{ loop.index }} desktop-day-col">
+            D{{ loop.index }}<br/>
+            <span style="font-size:0.7rem;font-weight:400;">
+              {{ rd | replace("-", ".") | regex_replace('^(\d{4})\.(\d{2})\.(\d{2})$', '\\3.\\2') }}
             </span>
           </th>
           {% endfor %}
-          <th class="time-col total-col">Total Time</th>
+
+          <th class="time-col total-col">Total</th>
         </tr>
       </thead>
       <tbody>
@@ -116,28 +127,32 @@
             <div class="participant-name">{{ p.name }}</div>
             {% if p.city %}<div class="participant-city">{{ p.city }}</div>{% endif %}
           </td>
-          <!-- Per-day pigeons cells -->
+
+          <!-- per-day pigeons -->
           {% for r in p.rounds %}
           <td class="time-cell round-col round-{{ r.round_number }} pigeons-day-col" style="display:none;text-align:center;">
             {{ r.pigeons_landed }}/{{ p.num_pigeons }}
           </td>
           {% endfor %}
-          <!-- Total pigeons cell -->
+
+          <!-- total pigeons -->
           <td class="total-col" style="text-align:center;">
             {{ p.total_landed }}/{{ p.num_pigeons }}
           </td>
-          <!-- Per-day time cells -->
+
+          <!-- per-day times -->
           {% for r in p.rounds %}
-          <td class="time-cell round-col round-{{ r.round_number }} {{ r.cell_class }}">
+          <td class="time-cell round-col round-{{ r.round_number }} desktop-day-col {{ r.cell_class }}">
             {{ r.display }}
           </td>
           {% endfor %}
+
           <td class="total-cell total-col">{{ p.total_display }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-  </div><!-- /.no-scroll-wrap -->
+  </div>
 
   <div class="table-info" id="table-info">
     Showing {{ participants | length }} of {{ participants | length }} entries

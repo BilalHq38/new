@@ -657,30 +657,56 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 /* ─── DATE TABS ─── */
+/* Outer wrapper masks overflow and provides the scroll affordance */
+.date-tabs-wrap {
+  position: relative;
+  margin: 8px 0 6px;
+  /* fade edges so user sees there's more to scroll */
+  -webkit-mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+}
 .date-tabs {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;           /* NEVER wrap — always one row */
   gap: 4px;
-  padding: 8px 0 6px;
-  align-items: center;
+  padding: 4px 16px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;       /* Firefox */
 }
+.date-tabs::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
 .date-tab {
-  padding: 6px 14px;
+  flex: 0 0 auto;              /* never shrink */
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 10px;
   border-radius: var(--radius);
-  font-size: 0.84rem;
-  font-weight: 500;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: var(--navy);
   background: var(--white);
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+  line-height: 1.25;
+  min-width: 44px;
+  text-align: center;
 }
+.date-tab-day  { font-size: 0.78rem; font-weight: 700; }
+.date-tab-date { font-size: 0.66rem; font-weight: 400; color: var(--text-muted); }
+.date-tab-total { min-width: 52px; }
 .date-tab:hover { background: var(--light-blue); text-decoration: none; }
 .date-tab.active {
   background: var(--teal);
   color: var(--white);
   border-color: var(--teal);
 }
+.date-tab.active .date-tab-date { color: rgba(255,255,255,0.75); }
 
 /* ─── SEARCH ─── */
 .search-wrap {
@@ -700,15 +726,26 @@ img { max-width: 100%; height: auto; display: block; }
 .search-input:focus { border-color: var(--teal); }
 
 /* ─── TABLE ─── */
-/* On tournament public pages the table expands to full width with no scroll —
-   columns are compact enough to fit. Admin tables still scroll via .admin-table-wrap. */
 .table-wrap { overflow-x: auto; max-width: 100%; }
-.no-scroll-wrap { overflow-x: visible; max-width: 100%; }
+
+/* Tournament leaderboard wrapper:
+   - Desktop (>600px): no scroll, all columns visible
+   - Mobile (≤600px):  only shows relevant columns per tab — fits in viewport */
+.t-wrap { overflow-x: auto; max-width: 100%; }
+
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
   min-width: 0;
+}
+
+/* The leaderboard table on mobile collapses to fit — don't force a min-width */
+.leaderboard-table { table-layout: auto; }
+
+@media (min-width: 601px) {
+  /* Desktop: table expands naturally, no scrollbar needed for total view */
+  .t-wrap { overflow-x: visible; }
 }
 thead th {
   background: var(--teal);
@@ -1189,18 +1226,17 @@ td.time-zero { color: #aab; }
   .tournament-grid { grid-template-columns: 1fr; }
   .card-banner,
   .card-banner-placeholder { height: 100px; }
-  .date-tabs { gap: 3px; padding: 6px 0 4px; }
-  .date-tab { padding: 4px 7px; font-size: 0.74rem; }
-  /* Tournament table: tiny but readable on phone, no scrollbar */
-  table { font-size: 0.72rem; }
-  td, thead th { padding: 5px 4px; }
-  thead th.sr-col { width: 22px; }
-  thead th.pic-col { width: 32px; }
+  /* Tournament table on phone: compact but legible */
+  .leaderboard-table { font-size: 0.78rem; }
+  .leaderboard-table td,
+  .leaderboard-table thead th { padding: 6px 5px; }
+  thead th.sr-col { width: 24px; }
+  thead th.pic-col { width: 34px; }
   .participant-img,
-  .participant-img-placeholder { width: 28px; height: 28px; font-size: 0.8rem; }
-  .participant-name { font-size: 0.78rem; }
-  .participant-city { font-size: 0.66rem; }
-  td.time-cell, td.total-cell { font-size: 0.72rem; }
+  .participant-img-placeholder { width: 30px; height: 30px; font-size: 0.85rem; }
+  .participant-name { font-size: 0.8rem; }
+  .participant-city { font-size: 0.68rem; }
+  td.time-cell, td.total-cell { font-size: 0.78rem; }
   .search-input { width: 100%; font-size: 0.82rem; }
   .search-wrap { justify-content: stretch; }
   .navbar-meta-clock { font-size: 0.68rem; }
