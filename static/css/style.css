@@ -32,11 +32,11 @@ a { color: var(--navy); text-decoration: none; }
 a:hover { text-decoration: underline; }
 img { max-width: 100%; height: auto; display: block; }
 
-/* ─── NAVBAR BRAND ─── */
+/* ─── NAVBAR BRAND / LOGO ─── */
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   text-decoration: none;
   padding: 6px 0;
   flex: 0 0 auto;
@@ -46,24 +46,20 @@ img { max-width: 100%; height: auto; display: block; }
   width: 40px;
   height: 40px;
   flex-shrink: 0;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 .navbar-brand-name {
   font-size: 1.05rem;
   font-weight: 800;
   color: var(--white);
   letter-spacing: 0.01em;
-  line-height: 1.15;
   white-space: nowrap;
 }
-
-/* ─── BACK BUTTON ─── */
 .nav-back-btn {
   font-size: 0.85rem !important;
-  opacity: 0.8;
+  opacity: 0.75;
   padding: 14px 12px !important;
 }
-.nav-back-btn:hover { opacity: 1; }
+.nav-back-btn:hover { opacity: 1 !important; }
 
 /* ─── TICKER ─── */
 .ticker-wrap {
@@ -119,12 +115,6 @@ img { max-width: 100%; height: auto; display: block; }
   flex-wrap: wrap;
   gap: 0;
 }
-.nav-hamburger-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
 .navbar-meta {
   font-size: 0.78rem;
   color: rgba(255,255,255,0.85);
@@ -132,6 +122,15 @@ img { max-width: 100%; height: auto; display: block; }
   display: flex;
   gap: 14px;
   align-items: center;
+}
+.nav-hamburger-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+  width: 100%;
+  justify-content: space-between;
 }
 .nav-links {
   display: flex;

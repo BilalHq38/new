@@ -20,7 +20,9 @@
   <div class="form-group">
     <label>Number of Pigeons</label>
     <input type="number" name="num_pigeons" value="{{ participant.num_pigeons }}" min="1" max="100"/>
+    <div class="form-hint">Total pigeons entered at the start. Pigeons landed is recorded in Enter Times.</div>
   </div>
+  <!-- pigeons_landed is managed in Enter Times, keep current value -->
   <input type="hidden" name="pigeons_landed" value="{{ participant.pigeons_landed }}"/>
   <div class="form-group">
     <label>Profile Image</label>

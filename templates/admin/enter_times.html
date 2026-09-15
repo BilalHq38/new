@@ -23,12 +23,10 @@
           {% for rd in round_dates %}
           <th style="text-align:center;">
             Round {{ loop.index }}<br/>
-            <span style="font-size:0.76rem;font-weight:400;">
-              {{ rd | replace("-",".") }}
-            </span>
+            <span style="font-size:0.76rem;font-weight:400;">{{ rd | replace("-",".") }}</span>
           </th>
           {% endfor %}
-          <th style="text-align:center;">Landed</th>
+          <th style="text-align:center;">Pigeons Landed</th>
           <th style="text-align:center;">Total</th>
         </tr>
       </thead>
@@ -55,8 +53,9 @@
                    value="{{ p.pigeons_landed }}"
                    min="0"
                    max="{{ p.num_pigeons }}"
-                   style="width:60px;padding:5px 6px;border:1px solid var(--border);border-radius:4px;text-align:center;font-size:0.88rem;"
-                   title="Pigeons that landed"/>
+                   style="width:64px;padding:5px 6px;border:1px solid var(--border);border-radius:4px;text-align:center;font-size:0.88rem;"
+                   title="How many pigeons actually landed"/>
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">of {{ p.num_pigeons }}</div>
           </td>
           <td style="text-align:center;font-family:monospace;font-weight:700;color:var(--navy);">
             {{ p.total_display }}
