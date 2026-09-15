@@ -42,27 +42,27 @@
 
 <!-- NAVBAR -->
 <nav class="navbar">
-  <div class="navbar-inner">
-    <div class="nav-hamburger-row">
+  <!-- TOP BAR: logo left, meta right, full width -->
+  <div class="navbar-topbar">
+    <a href="/" class="navbar-brand" aria-label="Gazi Imam Champions Home">
+      <img src="/static/images/logo.svg"
+           class="navbar-logo"
+           alt="Gazi Imam Champions pigeon logo"
+           width="40" height="40"
+           style="object-fit:contain;"/>
+      <span class="navbar-brand-name">Gazi Imam Champions</span>
+    </a>
 
-      <!-- LOGO — logo.svg placed at static/images/logo.svg -->
-      <a href="/" class="navbar-brand" aria-label="Gazi Imam Champions Home">
-        <img src="/static/images/logo.svg"
-             class="navbar-logo"
-             alt="Gazi Imam Champions pigeon logo"
-             width="40" height="40"
-             style="object-fit:contain;"/>
-        <span class="navbar-brand-name">Gazi Imam Champions</span>
-      </a>
-
-      <div class="navbar-meta">
-        <span id="live-clock">{{ now.strftime('%d.%m.%Y  %H:%M:%S') }}</span>
-        <span>|</span>
-        <span>Online: {{ online_count }}</span>
-      </div>
-      <button class="hamburger" id="hamburger" aria-label="Menu">&#9776;</button>
+    <div class="navbar-meta">
+      <span id="live-clock" class="navbar-meta-clock">{{ now.strftime('%d.%m.%Y %H:%M:%S') }}</span>
+      <span class="navbar-meta-online">🟢 Online: {{ online_count }}</span>
     </div>
 
+    <button class="hamburger" id="hamburger" aria-label="Menu">&#9776;</button>
+  </div>
+
+  <!-- NAV LINKS ROW -->
+  <div class="navbar-links-row">
     <ul class="nav-links" id="nav-links">
       <li><a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Home</a></li>
 
