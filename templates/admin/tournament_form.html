@@ -35,11 +35,11 @@
              value="{{ tournament.start_date if tournament else '' }}"/>
     </div>
     <div class="form-group">
-      <label for="round_interval_days">Days Between Rounds</label>
+      <label for="round_interval_days">Days Between Days</label>
       <input type="number" id="round_interval_days" name="round_interval_days"
              min="1" max="30"
              value="{{ tournament.round_interval_days if tournament else 1 }}"/>
-      <div class="form-hint">e.g. 1 = every day, 2 = every 2 days</div>
+      <div class="form-hint">e.g. 1 = every day, 2 = every other day</div>
     </div>
   </div>
 

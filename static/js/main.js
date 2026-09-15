@@ -48,18 +48,22 @@ function activateTab(tabEl, colClass) {
   document.querySelectorAll(".date-tab").forEach(t => t.classList.remove("active"));
   tabEl.classList.add("active");
 
-  // show/hide columns
-  const allCols = document.querySelectorAll(".round-col");
-  allCols.forEach(col => col.style.display = "none");
+  // hide all round columns and total columns first
+  document.querySelectorAll(".round-col").forEach(col => col.style.display = "none");
+  document.querySelectorAll(".total-col").forEach(c => c.style.display = "none");
 
   if (colClass === "total") {
-    // show all round columns and total
-    allCols.forEach(col => col.style.display = "");
+    // Total tab: show all day-time columns but NOT per-day pigeons columns
+    document.querySelectorAll(".round-col").forEach(col => {
+      if (!col.classList.contains("pigeons-day-col")) {
+        col.style.display = "";
+      }
+    });
+    // Show total columns (total time + total pigeons)
     document.querySelectorAll(".total-col").forEach(c => c.style.display = "");
   } else {
-    // show only the selected round column + always-visible cols
+    // Specific day tab: show that day's time + pigeons columns, hide total cols
     document.querySelectorAll(`.${colClass}`).forEach(c => c.style.display = "");
-    document.querySelectorAll(".total-col").forEach(c => c.style.display = "none");
   }
 }
 

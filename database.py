@@ -96,6 +96,7 @@ def init_db():
                 round_date TEXT NOT NULL,
                 time_seconds INTEGER NOT NULL DEFAULT 0,
                 is_entered INTEGER NOT NULL DEFAULT 0,
+                pigeons_landed INTEGER NOT NULL DEFAULT 0,
                 UNIQUE(participant_id, round_number),
                 FOREIGN KEY (participant_id) REFERENCES participants(id) ON DELETE CASCADE,
                 FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE
@@ -163,6 +164,14 @@ def init_db():
         for column, definition in stats_columns.items():
             if column not in tournament_columns:
                 conn.execute(f"ALTER TABLE tournaments ADD COLUMN {column} {definition}")
+
+        round_time_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(round_times)").fetchall()
+        }
+        if "pigeons_landed" not in round_time_columns:
+            conn.execute(
+                "ALTER TABLE round_times ADD COLUMN pigeons_landed INTEGER NOT NULL DEFAULT 0"
+            )
 
         participant_columns = {
             row[1] for row in conn.execute("PRAGMA table_info(participants)").fetchall()

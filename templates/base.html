@@ -44,23 +44,13 @@
   <div class="navbar-inner">
     <div class="nav-hamburger-row">
 
-      <!-- LOGO — paste your SVG between the svg tags below -->
+      <!-- LOGO — logo.svg placed at static/images/logo.svg -->
       <a href="/" class="navbar-brand" aria-label="Gazi Imam Champions Home">
-        <svg class="navbar-logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <!-- PASTE YOUR LOGO SVG PATHS HERE -->
-          <!-- Default pigeon logo below — replace with your own -->
-          <ellipse cx="22" cy="22" rx="11" ry="8" fill="#e8e0d5"/>
-          <path d="M12 20 Q6 12 14 16 Q10 18 12 20Z" fill="#c8bfb5"/>
-          <path d="M12 20 Q4 16 13 18Z" fill="#b8afa5"/>
-          <circle cx="31" cy="16" r="6" fill="#e8e0d5"/>
-          <circle cx="33" cy="15" r="1.5" fill="#1a1a2e"/>
-          <circle cx="33.5" cy="14.5" r="0.4" fill="white"/>
-          <path d="M36 16 L39 15.5 L36 17Z" fill="#f0a500"/>
-          <ellipse cx="29" cy="20" rx="4" ry="3" fill="#9ab8c8" opacity="0.4"/>
-          <path d="M11 22 Q6 26 10 28 Q12 24 14 23Z" fill="#c0b8ae"/>
-          <line x1="20" y1="30" x2="18" y2="34" stroke="#f0a500" stroke-width="1.2"/>
-          <line x1="24" y1="30" x2="22" y2="34" stroke="#f0a500" stroke-width="1.2"/>
-        </svg>
+        <img src="/static/images/logo.svg"
+             class="navbar-logo"
+             alt="Gazi Imam Champions pigeon logo"
+             width="40" height="40"
+             style="object-fit:contain;"/>
         <span class="navbar-brand-name">Gazi Imam Champions</span>
       </a>
 
@@ -74,7 +64,12 @@
 
     <ul class="nav-links" id="nav-links">
       <li><a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Home</a></li>
-      <li><a href="javascript:history.back()" class="nav-back-btn">&#8592; Back</a></li>
+
+      {% if request.url.path != '/' %}
+      <li>
+        <a href="javascript:history.back()" class="nav-back-btn" aria-label="Go back">&#8592; Back</a>
+      </li>
+      {% endif %}
 
       <li class="dropdown">
         <button>Tournaments ▾</button>

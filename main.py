@@ -30,6 +30,7 @@ def regex_replace(value, pattern, replacement):
     return _re.sub(pattern, replacement, value)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+# static/images/ is served under /static/images/ automatically via the mount above
 templates = Jinja2Templates(directory="templates")
 templates.env.filters["regex_replace"] = regex_replace
 
@@ -40,10 +41,10 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 MAX_HOME_BANNERS = 5
 
 TEMPLATES_MAP = {
-    "1r7p":  {"num_rounds": 1,  "num_pigeons": 7,  "label": "1 Round – 7 Pigeons"},
-    "3r7p":  {"num_rounds": 3,  "num_pigeons": 7,  "label": "3 Rounds – 7 Pigeons"},
-    "7r7p":  {"num_rounds": 7,  "num_pigeons": 7,  "label": "7 Rounds – 7 Pigeons"},
-    "15r7p": {"num_rounds": 15, "num_pigeons": 7,  "label": "15 Rounds – 7 Pigeons"},
+    "1r7p":  {"num_rounds": 1,  "num_pigeons": 7,  "label": "1 Day – 7 Pigeons"},
+    "3r7p":  {"num_rounds": 3,  "num_pigeons": 7,  "label": "3 Days – 7 Pigeons"},
+    "7r7p":  {"num_rounds": 7,  "num_pigeons": 7,  "label": "7 Days – 7 Pigeons"},
+    "15r7p": {"num_rounds": 15, "num_pigeons": 7,  "label": "15 Days – 7 Pigeons"},
     "1d3p":  {"num_rounds": 1,  "num_pigeons": 3,  "label": "1 Day – 3 Pigeons"},
     "3d3p":  {"num_rounds": 3,  "num_pigeons": 3,  "label": "3 Days – 3 Pigeons"},
     "7d3p":  {"num_rounds": 7,  "num_pigeons": 3,  "label": "7 Days – 3 Pigeons"},
@@ -63,6 +64,7 @@ def startup():
     os.makedirs(BANNER_DIR, exist_ok=True)
     os.makedirs(SITE_BANNER_DIR, exist_ok=True)
     os.makedirs(PARTICIPANT_DIR, exist_ok=True)
+    os.makedirs("static/images", exist_ok=True)
 
 
 # ─────────────────────────────────────────────
@@ -147,6 +149,7 @@ def build_leaderboard(tournament_id: int, conn) -> tuple[list, list]:
     for p in participants:
         p["rounds"] = []
         total_seconds = 0
+        total_landed = 0
         for r in range(1, num_rounds + 1):
             round_date = round_dates[r - 1]
             entry = times_map.get((p["id"], r))
@@ -158,16 +161,20 @@ def build_leaderboard(tournament_id: int, conn) -> tuple[list, list]:
                 secs = 0
                 display = "00:00:00"
                 cell_class = "time-zero"
+            day_landed = int(entry["pigeons_landed"]) if entry else 0
             total_seconds += secs
+            total_landed += day_landed
             p["rounds"].append({
                 "round_number": r,
                 "round_date": round_date,
                 "display": display,
                 "seconds": secs,
                 "cell_class": cell_class,
+                "pigeons_landed": day_landed,
             })
         p["total_seconds"] = total_seconds
         p["total_display"] = seconds_to_hhmmss(total_seconds)
+        p["total_landed"] = total_landed
 
     if tournament["is_published"]:
         participants.sort(key=lambda x: x["total_seconds"], reverse=True)
@@ -619,14 +626,13 @@ async def add_participant(
     name: str = Form(...),
     city: str = Form(""),
     num_pigeons: int = Form(7),
-    pigeons_landed: Optional[int] = Form(None),
     image: UploadFile = File(None),
 ):
     require_admin(request)
     num_pigeons = max(1, min(num_pigeons, 100))
-    pigeons_landed = num_pigeons if pigeons_landed is None else max(
-        0, min(pigeons_landed, num_pigeons)
-    )
+    # pigeons_landed starts equal to num_pigeons; admin updates it in Enter Times
+    # after each round once actual landing results are known.
+    pigeons_landed = num_pigeons
     image_filename = ""
     if image and image.filename:
         image_filename = save_upload(image, PARTICIPANT_DIR)
@@ -689,17 +695,17 @@ async def update_participant(
     name: str = Form(...),
     city: str = Form(""),
     num_pigeons: int = Form(7),
-    pigeons_landed: int = Form(0),
     image: UploadFile = File(None),
 ):
     require_admin(request)
     num_pigeons = max(1, min(num_pigeons, 100))
-    pigeons_landed = max(0, min(pigeons_landed, num_pigeons))
     with get_db() as conn:
         existing = dict(conn.execute(
             "SELECT * FROM participants WHERE id=?", (participant_id,)
         ).fetchone())
         image_filename = existing["image"]
+        # Preserve whatever pigeons_landed value was set in Enter Times
+        pigeons_landed = existing["pigeons_landed"]
         if image and image.filename:
             delete_file(PARTICIPANT_DIR, image_filename)
             image_filename = save_upload(image, PARTICIPANT_DIR)
@@ -768,8 +774,11 @@ def enter_times_page(request: Request, tournament_id: int):
 async def save_times(request: Request, tournament_id: int):
     require_admin(request)
     form = await request.form()
+    form_data = dict(form)
+
     with get_db() as conn:
-        for key, value in form.items():
+        for key, value in form_data.items():
+            # Save round times: time_PID_DAYNUM
             if key.startswith("time_"):
                 parts = key.split("_")
                 if len(parts) == 3:
@@ -782,6 +791,43 @@ async def save_times(request: Request, tournament_id: int):
                            WHERE participant_id=? AND round_number=? AND tournament_id=?""",
                         (secs, is_entered, participant_id, round_number, tournament_id)
                     )
+            # Save per-day pigeons landed: daylanded_PID_DAYNUM
+            elif key.startswith("daylanded_"):
+                try:
+                    _, pid_str, rnum_str = key.split("_")
+                    participant_id = int(pid_str)
+                    round_number = int(rnum_str)
+                    landed = max(0, int(value)) if value.strip() else 0
+                    p = conn.execute(
+                        "SELECT num_pigeons FROM participants WHERE id=? AND tournament_id=?",
+                        (participant_id, tournament_id)
+                    ).fetchone()
+                    if p:
+                        landed = min(landed, p["num_pigeons"])
+                        conn.execute(
+                            """UPDATE round_times SET pigeons_landed=?
+                               WHERE participant_id=? AND round_number=? AND tournament_id=?""",
+                            (landed, participant_id, round_number, tournament_id)
+                        )
+                except (ValueError, TypeError):
+                    pass
+
+        # Update participants.pigeons_landed as sum of all days (for publish summary)
+        participants = conn.execute(
+            "SELECT id, num_pigeons FROM participants WHERE tournament_id=?",
+            (tournament_id,)
+        ).fetchall()
+        for p in participants:
+            total_landed = conn.execute(
+                "SELECT COALESCE(SUM(pigeons_landed), 0) FROM round_times WHERE participant_id=? AND tournament_id=?",
+                (p["id"], tournament_id)
+            ).fetchone()[0]
+            total_landed = min(total_landed, p["num_pigeons"])
+            conn.execute(
+                "UPDATE participants SET pigeons_landed=? WHERE id=?",
+                (total_landed, p["id"])
+            )
+
     return RedirectResponse(
         url=f"/admin/tournament/{tournament_id}/times", status_code=302
     )

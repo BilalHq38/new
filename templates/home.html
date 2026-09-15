@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Home – Pigeon flying Tournament{% endblock %}
+{% block title %}Home – Gazi Imam Champions{% endblock %}
 
 {% block content %}
 {% if home_banners %}
@@ -70,7 +70,10 @@
             <th>Name</th>
             <th class="home-pigeons-col">Pigeons</th>
             {% for rd in featured_round_dates %}
-            <th class="time-col">{{ rd | replace("-", ".") | regex_replace('^(\d{4})\.(\d{2})\.(\d{2})$', '\\3.\\2.\\1') }}</th>
+            <th class="time-col">
+              Day {{ loop.index }}<br/>
+              <span style="font-size:0.74rem;font-weight:400;">{{ rd | replace("-", ".") | regex_replace('^(\d{4})\.(\d{2})\.(\d{2})$', '\\3.\\2.\\1') }}</span>
+            </th>
             {% endfor %}
             <th class="time-col">Total time</th>
           </tr>

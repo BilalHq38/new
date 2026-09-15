@@ -29,15 +29,13 @@
     <div class="form-group">
       <label>Number of Pigeons</label>
       <input type="number" name="num_pigeons" value="{{ tournament.num_pigeons }}" min="1" max="100"/>
-      <div class="form-hint">Total pigeons entered at the start. Pigeons landed will be recorded when entering times.</div>
+      <div class="form-hint">Total pigeons entered at the start. Pigeons landed will be recorded per day in Enter Times.</div>
     </div>
     <div class="form-group">
       <label>Profile Image</label>
       <input type="file" name="image" accept="image/*"/>
     </div>
   </div>
-  <!-- pigeons_landed defaults to num_pigeons, updated later in Enter Times -->
-  <input type="hidden" name="pigeons_landed" value="{{ tournament.num_pigeons }}"/>
   <button type="submit" class="btn btn-success">Add Participant</button>
 </form>
 
