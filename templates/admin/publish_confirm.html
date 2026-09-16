@@ -1,0 +1,56 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Publish Results – {{ tournament.name }}{% endblock %}
+
+{% block content %}
+<h1>Publish results</h1>
+<p style="color:var(--text-muted);margin-bottom:20px;">
+  <strong>{{ tournament.name }}</strong>
+  · {{ summary.lofts }} lofts
+  · {{ summary.total_pigeons }} pigeons
+  · {{ summary.pigeons_landed }} landed
+</p>
+
+{% if participants %}
+<div class="publish-preview">
+  <h2>Final standings</h2>
+  <ol class="publish-standings">
+    {% for p in participants %}
+    <li class="publish-row {% if loop.index <= 3 %}publish-top{{ loop.index }}{% endif %}">
+      <span class="publish-rank">
+        {% if loop.index == 1 %}🥇
+        {% elif loop.index == 2 %}🥈
+        {% elif loop.index == 3 %}🥉
+        {% else %}{{ loop.index }}{% endif %}
+      </span>
+      <span class="publish-name" dir="auto">{{ p.name }}{% if p.city %}<small>{{ p.city }}</small>{% endif %}</span>
+      <span class="publish-pigeons">{{ p.pigeons_label }}</span>
+      <span class="publish-time">{{ p.total_display }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+</div>
+{% endif %}
+
+<form method="post" action="/admin/tournament/{{ tournament.id }}/publish" class="publish-form">
+
+  <div class="form-group">
+    <label for="remarks">Remarks <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
+    <textarea id="remarks" name="remarks" rows="4"
+              placeholder="e.g. Congratulations to Ustad Sufi Razwan for winning the tournament! A great day of flying for all lofts. We look forward to seeing you at the next event."
+              dir="auto">{{ tournament.published_remarks or '' }}</textarea>
+    <div class="form-hint">
+      This message is shown in a highlighted box at the top of the result tab.
+      You can update it later by unpublishing and republishing.
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <button type="submit" class="btn btn-success">Publish results now</button>
+    <a href="/admin" class="btn btn-secondary">Cancel</a>
+    <span style="font-size:0.8rem;color:var(--text-muted);">
+      The public leaderboard will immediately show the final standings and your remarks.
+    </span>
+  </div>
+
+</form>
+{% endblock %}

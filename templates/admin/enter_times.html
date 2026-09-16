@@ -2,89 +2,145 @@
 {% block title %}Enter Times – {{ tournament.name }}{% endblock %}
 
 {% block content %}
-<h1>Enter Times: {{ tournament.name }}</h1>
-<div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-  <a href="/admin" class="btn btn-secondary btn-sm">← Dashboard</a>
+<h1>Enter times: {{ tournament.name }}</h1>
+
+<div class="admin-actions">
+  <a href="/admin" class="btn btn-secondary btn-sm">Dashboard</a>
   <a href="/admin/tournament/{{ tournament.id }}/participants" class="btn btn-secondary btn-sm">Participants</a>
-  <a href="/tournament/{{ tournament.id }}" target="_blank" class="btn btn-secondary btn-sm">View Public Page ↗</a>
-  <span style="font-size:0.82rem;color:var(--text-muted);">
-    Format: HH:MM:SS &nbsp;|&nbsp; Leave 00:00:00 if not entered
-  </span>
+  <a href="/tournament/{{ tournament.id }}" target="_blank" class="btn btn-secondary btn-sm">View public page</a>
 </div>
 
+{% if request.query_params.get('saved') %}
+<div class="alert alert-success">Day {{ day }} saved. Totals updated.</div>
+{% endif %}
+
 {% if participants %}
-<form method="post" action="/admin/tournament/{{ tournament.id }}/times/save">
-  <div class="table-wrap">
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Participant</th>
-          {% for rd in round_dates %}
-          <th style="text-align:center;min-width:110px;">
-            Day {{ loop.index }}<br/>
-            <span style="font-size:0.76rem;font-weight:400;">{{ rd | replace("-",".") }}</span>
-          </th>
-          <th style="text-align:center;min-width:80px;">
-            Landed<br/>
-            <span style="font-size:0.76rem;font-weight:400;">Day {{ loop.index }}</span>
-          </th>
-          {% endfor %}
-          <th style="text-align:center;">Total Time</th>
-          <th style="text-align:center;">Total Landed</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in participants %}
-        <tr>
-          <td>{{ loop.index }}</td>
-          <td>
-            <div style="font-weight:600;">{{ p.name }}</div>
-            {% if p.city %}<div style="font-size:0.78rem;color:var(--text-muted);">{{ p.city }}</div>{% endif %}
-          </td>
-          {% for r in p.rounds %}
-          <td style="text-align:center;">
-            <input type="text"
-                   name="time_{{ p.id }}_{{ r.round_number }}"
-                   class="time-input"
-                   value="{{ r.display }}"
-                   placeholder="00:00:00"
-                   style="width:90px;"/>
-          </td>
-          <td style="text-align:center;">
-            <input type="number"
-                   name="daylanded_{{ p.id }}_{{ r.round_number }}"
-                   value="{{ r.pigeons_landed }}"
-                   min="0"
-                   max="{{ p.num_pigeons }}"
-                   style="width:56px;padding:5px 4px;border:1px solid var(--border);border-radius:4px;text-align:center;font-size:0.88rem;"
-                   title="Pigeons landed on Day {{ r.round_number }}"/>
-            <div style="font-size:0.70rem;color:var(--text-muted);margin-top:1px;">of {{ p.num_pigeons }}</div>
-          </td>
-          {% endfor %}
-          <td style="text-align:center;font-family:monospace;font-weight:700;color:var(--navy);">
-            {{ p.total_display }}
-          </td>
-          <td style="text-align:center;font-weight:700;color:var(--navy);">
-            {{ p.total_landed }} / {{ p.num_pigeons }}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+
+<!-- DAY PICKER -->
+<div class="admin-day-tabs" role="tablist" aria-label="Choose a day">
+  {% for rd in round_dates %}
+  <a href="/admin/tournament/{{ tournament.id }}/times?day={{ loop.index }}"
+     class="admin-day-tab{% if loop.index == day %} active{% endif %}">
+    <span>Day {{ loop.index }}</span>
+    <small>{{ rd | replace("-", ".") }}</small>
+  </a>
+  {% endfor %}
+</div>
+
+<form method="post" action="/admin/tournament/{{ tournament.id }}/times/save?day={{ day }}" id="times-form">
+  <input type="hidden" name="day" value="{{ day }}"/>
+
+  <div class="day-settings">
+    <div class="form-group">
+      <label for="day_start_time">Release time for day {{ day }}</label>
+      <input type="time" id="day_start_time" name="day_start_time" value="{{ day_start_override }}"/>
+      <div class="form-hint">
+        Leave empty to use the tournament release time ({{ tournament.start_time }}).
+        Every flight on this day is counted from <strong id="release-label">{{ release_time }}</strong>.
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="first_winner">First winner bird</label>
+      <input type="text" id="first_winner" name="first_winner" value="{{ first_winner }}"
+             placeholder="e.g. Malik Hamad – 16:45"/>
+    </div>
+    <div class="form-group">
+      <label for="last_winner">Last winner bird</label>
+      <input type="text" id="last_winner" name="last_winner" value="{{ last_winner }}"
+             placeholder="e.g. Ustad Mastar – 19:13"/>
+    </div>
   </div>
 
-  <div style="margin-top:18px;display:flex;gap:10px;">
-    <button type="submit" class="btn btn-success">Save All Times</button>
-    <a href="/admin" class="btn btn-secondary">Cancel</a>
+  <p class="entry-help">
+    Type the clock time each pigeon sat down, 24-hour, like <code>13:53</code>.
+    The flight time is worked out from the release time, so a bird home at 13:53
+    after a 06:00 release counts as 7:53. Tick <strong>Bad luck</strong> for a bird that
+    did not come home; leave a pigeon empty while you are still waiting for it.
+    {% if scoring_limit %}
+    <br/>Only the best {{ scoring_limit }} flights per loft count towards the day total.
+    {% endif %}
+    {% if extra.enabled %}
+    <br/>Lofts ticked for the <strong>{{ extra.name }}</strong> get one more box.
+    {% if extra.counts %}Its time is added to the total.{% else %}Its time is recorded but not added to the total.{% endif %}
+    {% endif %}
+  </p>
+
+  <div class="entry-list">
+    {% for p in participants %}
+    <article class="entry-card" data-participant="{{ p.id }}">
+      <header class="entry-card-head">
+        <div class="entry-card-who">
+          <span class="entry-card-name">{{ p.name }}</span>
+          {% if p.city %}<span class="entry-card-city">{{ p.city }}</span>{% endif %}
+        </div>
+        <div class="entry-card-totals">
+          <span class="entry-card-total" data-role="day-total">{{ p.day_display }}</span>
+          <span class="entry-card-landed">
+            <span data-role="landed-count">{{ p.day_landed }}</span>/{{ p.num_pigeons + (1 if (extra.enabled and p.has_extra) else 0) }} home
+          </span>
+        </div>
+      </header>
+
+      <div class="pigeon-grid">
+        {% for cell in p.pigeons %}
+        {% if cell.state != 'none' or not cell.is_extra %}
+        <label class="pigeon-field{% if cell.state == 'missed' %} is-missed{% endif %}{% if cell.is_extra %} is-extra{% endif %}">
+          <span class="pigeon-field-label">
+            {% if cell.is_extra %}{{ cell.label }}{% else %}Pigeon {{ cell.number }}{% endif %}
+          </span>
+          <input type="time"
+                 name="pt_{{ p.id }}_{{ day }}_{{ cell.number }}"
+                 value="{{ cell.arrival }}"
+                 data-role="arrival"
+                 {% if cell.state == 'missed' %}disabled{% endif %}/>
+          <span class="pigeon-field-flight" data-role="flight">
+            {% if cell.state == 'landed' %}{{ cell.flight_display }}{% endif %}
+          </span>
+          <span class="pigeon-miss">
+            <input type="checkbox"
+                   name="miss_{{ p.id }}_{{ day }}_{{ cell.number }}"
+                   data-role="miss"
+                   {% if cell.state == 'missed' %}checked{% endif %}/>
+            Bad luck
+          </span>
+        </label>
+        {% endif %}
+        {% endfor %}
+      </div>
+
+      <div class="entry-card-foot">
+        <button type="button" class="btn btn-sm btn-secondary" data-action="miss-rest">
+          Mark empty ones bad luck
+        </button>
+        <button type="button" class="btn btn-sm btn-secondary" data-action="clear-row">
+          Clear this loft
+        </button>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  <div class="save-bar">
+    <button type="submit" class="btn btn-success">Save day {{ day }}</button>
+    <a href="/tournament/{{ tournament.id }}" target="_blank" class="btn btn-secondary">Preview</a>
   </div>
 </form>
 
 {% else %}
 <div class="alert alert-info">
-  No participants yet.
+  No lofts in this tournament yet.
   <a href="/admin/tournament/{{ tournament.id }}/participants">Add participants first.</a>
 </div>
 {% endif %}
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.PIGEON_ENTRY = {
+    releaseTime: "{{ release_time }}",
+    scoringLimit: {{ scoring_limit or 0 }},
+    extraCounts: {{ 'true' if extra.counts else 'false' }}
+  };
+</script>
 {% endblock %}

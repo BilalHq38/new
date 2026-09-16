@@ -19,14 +19,12 @@
   --shadow:     0 2px 8px rgba(0,0,0,0.10);
 }
 
-html { font-size: 15px; scroll-behavior: smooth; overflow-x: hidden; }
+html { font-size: 15px; scroll-behavior: smooth; }
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
-  overflow-x: hidden;
-  max-width: 100vw;
 }
 
 a { color: var(--navy); text-decoration: none; }
@@ -55,12 +53,28 @@ img { max-width: 100%; height: auto; display: block; }
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
+/* Back control: an arrow in the top bar, always reachable on a phone rather
+   than buried inside the hamburger menu. */
 .nav-back-btn {
-  font-size: 0.85rem !important;
-  opacity: 0.75;
-  padding: 14px 12px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  margin-right: 10px;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  color: var(--white);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
 }
-.nav-back-btn:hover { opacity: 1 !important; }
+.nav-back-btn svg { width: 18px; height: 18px; display: block; }
+.nav-back-btn:hover { background: rgba(255,255,255,0.24); }
+.nav-back-btn:active { transform: scale(0.94); }
+.nav-back-btn:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
 
 /* ─── TOURNAMENT PAGE TICKER (inside tournament detail, not the removed site bar) ─── */
 .ticker-wrap {
@@ -101,15 +115,11 @@ img { max-width: 100%; height: auto; display: block; }
   position: sticky;
   top: 0;
   z-index: 1000;
-  overflow: hidden;
-  max-width: 100%;
 }
 .navbar {
   background: var(--teal);
   padding: 0;
   box-shadow: var(--shadow);
-  overflow: hidden;
-  max-width: 100%;
 }
 
 /* Top bar: spans full viewport width, logo left, meta right */
@@ -259,7 +269,7 @@ img { max-width: 100%; height: auto; display: block; }
   padding: 0 16px;
 }
 /* Bottom padding accounts for the fixed footer height */
-.page-body { padding: 14px 0 60px; }
+.page-body { padding: 8px 0 50px; }
 
 .site-footer {
   position: fixed;
@@ -300,7 +310,7 @@ img { max-width: 100%; height: auto; display: block; }
 /* Home carousel also uses 16:5 — all banners are the same ratio across the site */
 .landing-carousel {
   position: relative;
-  aspect-ratio: 16 / 5;
+  aspect-ratio: 16 / 6;
   height: auto;
   margin: 14px clamp(8px, 0.75vw, 18px) 0;
   overflow: hidden;
@@ -315,7 +325,7 @@ img { max-width: 100%; height: auto; display: block; }
   height: 100%;
 }
 .landing-carousel-slide { margin: 0; }
-.landing-carousel-slide img { object-fit: cover; object-position: center; }
+.landing-carousel-slide img { object-fit: contain; object-position: center; }
 .carousel-control {
   position: absolute;
   top: 50%;
@@ -577,12 +587,23 @@ img { max-width: 100%; height: auto; display: block; }
 .status-dot-upcoming { background: #3787cf; }
 
 /* ─── BANNER ─── */
-/* All site banners use a fixed 16:5 ratio (1920×600). AI-generate at 1920×600. */
+/* Tournament banners are promo artwork with writing right up to the edges, so
+   they are shown whole. The image keeps its own shape and is only letterboxed
+   when it would otherwise take over the screen. */
+.tournament-banner-wrap {
+  background: #0f2033;
+  display: flex;
+  justify-content: center;
+}
 .tournament-banner {
   width: 100%;
-  aspect-ratio: 16 / 5;
-  object-fit: cover;
+  height: auto;
+  max-height: 44vh;
+  object-fit: contain;
   display: block;
+}
+@media (max-width: 760px) {
+  .tournament-banner { max-height: 32vh; }
 }
 
 /* ─── TOURNAMENT HEADER ─── */
@@ -710,9 +731,7 @@ img { max-width: 100%; height: auto; display: block; }
 
 /* ─── SEARCH ─── */
 .search-wrap {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 6px;
+  text-align: right;
 }
 .search-input {
   padding: 7px 12px;
@@ -728,10 +747,22 @@ img { max-width: 100%; height: auto; display: block; }
 /* ─── TABLE ─── */
 .table-wrap { overflow-x: auto; max-width: 100%; }
 
-/* Tournament leaderboard wrapper:
-   - Desktop (>600px): no scroll, all columns visible
-   - Mobile (≤600px):  only shows relevant columns per tab — fits in viewport */
-.t-wrap { overflow-x: auto; max-width: 100%; }
+/* Tournament leaderboard wrapper — always scrollable horizontally */
+.t-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  /* Subtle shadow on right edge hints there's more to scroll */
+  background:
+    linear-gradient(to right, white 30%, rgba(255,255,255,0)),
+    linear-gradient(to right, rgba(255,255,255,0), white 70%) 0 100%,
+    radial-gradient(farthest-side at 0% 50%, rgba(0,0,0,0.08), transparent),
+    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,0.08), transparent) 0 100%;
+  background-repeat: no-repeat;
+  background-color: white;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
 
 table {
   width: 100%;
@@ -740,12 +771,11 @@ table {
   min-width: 0;
 }
 
-/* The leaderboard table on mobile collapses to fit — don't force a min-width */
-.leaderboard-table { table-layout: auto; }
-
-@media (min-width: 601px) {
-  /* Desktop: table expands naturally, no scrollbar needed for total view */
-  .t-wrap { overflow-x: visible; }
+/* Leaderboard always stays as a real <table> — never collapses to cards */
+.leaderboard-table {
+  table-layout: auto;
+  /* Enough min-width so columns are readable; wrapper scrolls if needed */
+  min-width: 480px;
 }
 thead th {
   background: var(--teal);
@@ -1197,7 +1227,7 @@ td.time-zero { color: #aab; }
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 360px));
   }
   .search-input { width: 100%; }
-  .search-wrap { justify-content: stretch; }
+  .search-wrap { text-align: left; }
 }
 
 @media (min-width: 769px) {
@@ -1226,19 +1256,627 @@ td.time-zero { color: #aab; }
   .tournament-grid { grid-template-columns: 1fr; }
   .card-banner,
   .card-banner-placeholder { height: 100px; }
-  /* Tournament table on phone: compact but legible */
-  .leaderboard-table { font-size: 0.78rem; }
+  /* Tournament table on small phones: more compact, always a real table */
+  .leaderboard-table {
+    font-size: 0.65rem;
+    min-width: 380px;       /* still forces scroll rather than collapsing */
+    width: max-content;
+    max-width: none;
+  }
+  .leaderboard-table,
+  .leaderboard-table thead,
+  .leaderboard-table tbody,
+  .leaderboard-table tr,
+  .leaderboard-table th,
+  .leaderboard-table td { display: revert; }
   .leaderboard-table td,
-  .leaderboard-table thead th { padding: 6px 5px; }
-  thead th.sr-col { width: 24px; }
-  thead th.pic-col { width: 34px; }
-  .participant-img,
-  .participant-img-placeholder { width: 30px; height: 30px; font-size: 0.85rem; }
-  .participant-name { font-size: 0.8rem; }
-  .participant-city { font-size: 0.68rem; }
-  td.time-cell, td.total-cell { font-size: 0.78rem; }
+  .leaderboard-table thead th { padding: 5px 3px; }
+  td.time-cell, td.total-cell { font-size: 0.65rem; }
   .search-input { width: 100%; font-size: 0.82rem; }
-  .search-wrap { justify-content: stretch; }
+  .search-wrap { text-align: left; }
   .navbar-meta-clock { font-size: 0.68rem; }
   .navbar-clock-time { font-size: 0.76rem; }
+  .date-tabs { padding: 3px 10px; }
+  .date-tab  { padding: 4px 7px; font-size: 0.72rem; min-width: 38px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   PER-PIGEON TIMES, RESULT VIEW, MOBILE LAYOUT
+   ══════════════════════════════════════════════════════════════════ */
+
+/* The credit bar is fixed, so content needs room to clear it. */
+body { padding-bottom: 46px; }
+/* page-body is declared in the Layout section; no second declaration needed */
+
+/* ─── TOOLBAR ABOVE THE TABLE ─── */
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 6px 0;
+  flex-wrap: wrap;
+}
+.table-toolbar .search-wrap { margin: 0; flex: 1 1 220px; }
+.day-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.empty-note {
+  padding: 22px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.th-sub { font-size: 0.7rem; font-weight: 400; }
+
+/* ─── PIGEON CELLS ─── */
+td.pigeon-col { font-variant-numeric: tabular-nums; }
+td.pigeon-pending { color: #9aa8b6; }
+.bad-luck {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fdecea;
+  color: #b3261e;
+  border: 1px solid #f5c6c0;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.cell-none { color: #c2ccd6; }
+
+/* ─── WINNER BIRD NOTES ─── */
+.winner-notes { display: grid; gap: 6px; margin: 8px 0; }
+.winner-note {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 9px 14px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+.winner-note-first { background: #e4f1f8; border: 1px solid #b7dcee; color: #14536f; }
+.winner-note-last { background: #fbf3dd; border: 1px solid #ecd9a6; color: #6d5410; }
+.winner-note-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+.winner-note-value { font-weight: 700; }
+
+/* ─── RESULT TAB ─── */
+.date-tab-result { border-color: var(--accent); color: #8a5a00; }
+.date-tab-result.active { background: var(--accent); border-color: var(--accent); color: #3a2a00; }
+
+.result-panel {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-top: 8px;
+}
+.result-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.result-summary span {
+  flex: 1 1 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--light-blue);
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+.result-summary strong {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.podium {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+.podium-place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border-radius: 10px;
+  text-align: center;
+  background: var(--light-blue);
+  border: 1px solid var(--border);
+}
+.podium-1 { background: #fff6dc; border-color: #edd28a; }
+.podium-2 { background: #f1f4f7; border-color: #cfd8e1; }
+.podium-3 { background: #fbeee3; border-color: #e6c5a6; }
+.podium-rank { font-size: 1.5rem; line-height: 1; }
+.podium-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--white);
+}
+.podium-name { font-weight: 700; font-size: 0.88rem; line-height: 1.25; }
+.podium-city { font-size: 0.74rem; color: var(--text-muted); }
+.podium-time {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.result-list { list-style: none; margin: 0; padding: 0; }
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.result-sr {
+  flex: 0 0 26px;
+  font-weight: 700;
+  color: var(--navy);
+  text-align: center;
+}
+.result-name { flex: 1 1 auto; min-width: 0; font-weight: 600; }
+.result-name small { display: block; font-weight: 400; color: var(--text-muted); font-size: 0.76rem; }
+.result-pigeons { flex: 0 0 auto; font-size: 0.8rem; color: var(--text-muted); }
+.result-time {
+  flex: 0 0 auto;
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--navy);
+}
+.result-footnote { margin-top: 12px; font-size: 0.78rem; color: var(--text-muted); }
+
+/* ══════════════════════════════════════════════════════════════════
+   ADMIN · ENTER TIMES
+   ══════════════════════════════════════════════════════════════════ */
+.admin-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+
+.admin-day-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 14px;
+  scrollbar-width: none;
+}
+.admin-day-tabs::-webkit-scrollbar { display: none; }
+.admin-day-tab {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--white);
+  color: var(--navy);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+.admin-day-tab small { font-size: 0.68rem; font-weight: 400; color: var(--text-muted); }
+.admin-day-tab:hover { background: var(--light-blue); text-decoration: none; }
+.admin-day-tab.active { background: var(--teal); border-color: var(--teal); color: var(--white); }
+.admin-day-tab.active small { color: rgba(255,255,255,0.78); }
+
+.day-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.day-settings .form-group { margin-bottom: 0; }
+
+.entry-help {
+  padding: 11px 14px;
+  margin-bottom: 14px;
+  background: #fffbe6;
+  border: 1px solid #f0e08a;
+  border-radius: var(--radius);
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: #6f5c00;
+}
+.entry-help code {
+  background: rgba(0,0,0,0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.86em;
+}
+
+.entry-list { display: grid; gap: 10px; }
+.entry-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.entry-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.entry-card-who { display: flex; flex-direction: column; min-width: 0; }
+.entry-card-name { font-weight: 700; color: var(--navy); }
+.entry-card-city { font-size: 0.78rem; color: var(--text-muted); }
+.entry-card-totals { display: flex; align-items: baseline; gap: 10px; }
+.entry-card-total {
+  font-family: monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--teal);
+}
+.entry-card-landed { font-size: 0.76rem; color: var(--text-muted); }
+
+.pigeon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
+  gap: 8px;
+}
+.pigeon-field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 3px 6px;
+  padding: 8px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfdff;
+}
+.pigeon-field.is-missed { background: #fdf1f0; border-color: #f0c8c2; }
+.pigeon-field-label {
+  grid-column: 1 / -1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.pigeon-field input[type="time"] {
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 0.95rem;
+  background: var(--white);
+  color: var(--text);
+  min-height: 38px;
+}
+.pigeon-field input[type="time"]:focus { border-color: var(--teal); outline: none; }
+.pigeon-field input[type="time"]:disabled { background: #f1f1f3; color: #9aa8b6; }
+.pigeon-field-flight {
+  font-family: monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--teal);
+  min-width: 42px;
+  text-align: right;
+}
+.pigeon-field.is-missed .pigeon-field-flight { color: #b3261e; font-size: 0.7rem; }
+.pigeon-miss {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.pigeon-miss input { width: 15px; height: 15px; accent-color: var(--danger); }
+
+.entry-card-foot { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+.save-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+  margin-top: 16px;
+  background: linear-gradient(to top, var(--bg) 70%, rgba(245,248,250,0));
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MOBILE LEADERBOARD — always a real scrollable <table>, never cards.
+   .t-wrap handles horizontal overflow. SR + Pic + Name are sticky.
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 760px) {
+
+  /* ── Wrapper ── */
+  .t-wrap {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+
+  /* ── Force the table to stay as a real table — NEVER block/card ── */
+  .leaderboard-table,
+  .leaderboard-table thead,
+  .leaderboard-table tbody,
+  .leaderboard-table tfoot,
+  .leaderboard-table tr,
+  .leaderboard-table th,
+  .leaderboard-table td {
+    display: revert;          /* cancel any accidental display:block override */
+  }
+  .leaderboard-table {
+    font-size: 0.72rem;
+    /* wide enough that all visible columns are legible; wrapper scrolls the rest */
+    min-width: 420px;
+    width: max-content;       /* shrink-wraps to content, wrapper scrolls */
+    max-width: none;
+  }
+
+  /* ── Header row ── */
+  .leaderboard-table thead th {
+    padding: 7px 5px;
+    font-size: 0.68rem;
+    white-space: nowrap;
+    background: var(--teal);
+  }
+  .leaderboard-table thead th.sr-col  { width: 24px; min-width: 24px; text-align: center; }
+  .leaderboard-table thead th.pic-col { width: 30px; min-width: 30px; text-align: center; }
+
+  /* ── Body cells ── */
+  .leaderboard-table td {
+    display: table-cell;      /* belt-and-suspenders: always a real cell */
+    padding: 6px 5px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  td.sr-cell  { font-size: 0.72rem; text-align: center; width: 24px; }
+  td.pic-cell { text-align: center; width: 30px; padding: 4px 3px; }
+
+  /* ── Photos ── */
+  .participant-img,
+  .participant-img-placeholder { width: 26px; height: 26px; font-size: 0.72rem; border-width: 1px; }
+
+  /* ── Name cell: allow wrap, cap width ── */
+  td.name-cell { white-space: normal; min-width: 85px; max-width: 130px; }
+  .participant-name { font-size: 0.72rem; font-weight: 700; line-height: 1.3; }
+  .participant-city { font-size: 0.62rem; margin-top: 1px; }
+
+  /* ── Time / pigeon cells ── */
+  td.time-cell,
+  td.pigeons-cell { font-size: 0.7rem; text-align: center; padding: 5px 4px; white-space: nowrap; }
+
+  /* ── Total column ── */
+  td.total-cell {
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: var(--teal);
+    background: #f0faf7;
+    white-space: nowrap;
+    text-align: center;
+    padding: 5px 4px;
+  }
+  td.grand-total-col { border-left: 2px solid var(--teal); }
+  td.day-total-col   { border-left: 2px solid rgba(0,0,0,0.08); }
+
+  /* ── Sticky SR + Pic + Name — always visible while swiping ── */
+  .leaderboard-table thead th.sr-col,
+  .leaderboard-table td.sr-cell {
+    position: sticky; left: 0; z-index: 3;
+  }
+  .leaderboard-table thead th.pic-col,
+  .leaderboard-table td.pic-cell {
+    position: sticky; left: 24px; z-index: 3;
+  }
+  .leaderboard-table thead th.name-col,
+  .leaderboard-table td.name-cell {
+    position: sticky; left: 54px; z-index: 3;
+    border-right: 2px solid rgba(0,0,0,0.10);
+  }
+
+  /* ── Zebra stripes: on <td> not <tr> so sticky backgrounds work ── */
+  .leaderboard-table tbody tr:nth-child(odd)  td { background: var(--white); }
+  .leaderboard-table tbody tr:nth-child(even) td { background: var(--light-blue); }
+  .leaderboard-table tbody tr:hover           td { background: #cde8f5; }
+  .leaderboard-table tbody tr td.total-cell      { background: #f0faf7; }
+
+  /* ── Bad-luck badge ── */
+  .bad-luck { padding: 1px 5px; font-size: 0.65rem; }
+
+  /* ── Toolbar: stays as a compact row on mobile, no column stretch ── */
+  .table-toolbar {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 4px 0;
+  }
+  .table-toolbar .search-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: right;
+  }
+  .day-hint { white-space: normal; font-size: 0.72rem; }
+
+  /* ── Spacing tighten ── */
+  .page-body         { padding-top: 6px; }
+  .date-tabs-wrap    { margin: 4px 0 3px; }
+  .info-box          { margin: 4px 0; padding: 6px 10px; }
+  .tournament-ticker { margin: 4px 0; }
+  .extra-note        { margin: 4px 0; }
+  .winner-notes      { margin: 4px 0; }
+  .table-toolbar     { margin: 3px 0; }
+
+  /* ── Result / podium ── */
+  .podium { grid-template-columns: 1fr; }
+  .podium-place { flex-direction: row; text-align: left; gap: 10px; }
+  .podium-place .podium-time { margin-left: auto; }
+  .result-summary span { flex: 1 1 calc(50% - 8px); font-size: 0.95rem; }
+
+  /* ── Admin enter-times ── */
+  .pigeon-grid { grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); }
+  .save-bar { padding-bottom: 16px; }
+  .save-bar .btn { flex: 1 1 auto; text-align: center; }
+}
+
+/* ─── CREDIT BAR ─── */
+@media (max-width: 768px) {
+  .site-footer {
+    padding: 7px 14px;
+    font-size: 0.72rem;
+    justify-content: center;
+    gap: 8px;
+  }
+  .site-footer .footer-right { font-size: 0.7rem; }
+  body { padding-bottom: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-footer { transition: none; }
+}
+
+
+/* ─── THE NAMED EXTRA BIRD ─── */
+.extra-note {
+  margin: 8px 0;
+  padding: 8px 13px;
+  border-left: 3px solid var(--accent);
+  background: #fffaf0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 0.85rem;
+  color: #6f5405;
+}
+th.extra-col { background: #b8860b; }
+td.extra-col { background: #fffaf0; font-weight: 700; }
+
+.extra-pigeon-box {
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--white);
+}
+.extra-pigeon-box legend {
+  padding: 0 7px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+.extra-pigeon-box .form-check { margin-bottom: 10px; }
+
+.pigeon-field.is-extra {
+  background: #fffaf0;
+  border-color: #e6cf9a;
+}
+.pigeon-field.is-extra .pigeon-field-label { color: #8a6a10; }
+.pigeon-field.is-extra.is-missed { background: #fdf1f0; border-color: #f0c8c2; }
+
+@media (max-width: 760px) {
+  .leaderboard-table td.extra-col {
+    background: #fffaf0;
+    border-color: #e6cf9a;
+  }
+}
+
+/* ─── PUBLISH CONFIRMATION PAGE ─── */
+.publish-preview {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+.publish-preview h2 {
+  margin-top: 0;
+  font-size: 1rem;
+  color: var(--navy);
+  margin-bottom: 12px;
+}
+.publish-standings { list-style: none; margin: 0; padding: 0; }
+.publish-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.publish-row:last-child { border-bottom: 0; }
+.publish-top1 { background: #fffbee; }
+.publish-top2 { background: #f8f9fa; }
+.publish-top3 { background: #fff5ef; }
+.publish-rank { flex: 0 0 28px; font-size: 1.1rem; text-align: center; }
+.publish-name {
+  flex: 1 1 auto;
+  font-weight: 600;
+  min-width: 0;
+}
+.publish-name small {
+  display: block;
+  font-weight: 400;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+.publish-pigeons { flex: 0 0 auto; font-size: 0.8rem; color: var(--text-muted); }
+.publish-time {
+  flex: 0 0 auto;
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 0.95rem;
+}
+.publish-form { max-width: 640px; }
+.publish-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  resize: vertical;
+  min-height: 100px;
+}
+.publish-form textarea:focus { border-color: var(--teal); outline: none; }
+
+/* ─── RESULT REMARKS ─── */
+.result-remarks {
+  margin: 0 0 16px;
+  padding: 14px 18px 14px 20px;
+  background: linear-gradient(135deg, #1a6b5c0f 0%, #f0a5001a 100%);
+  border-left: 4px solid var(--teal);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
 }

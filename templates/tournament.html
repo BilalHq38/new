@@ -4,16 +4,18 @@
 {% block content %}
 
 {% if tournament.banner_image %}
-<img src="/static/uploads/banners/{{ tournament.banner_image }}"
-     alt="{{ tournament.name }}" class="tournament-banner"/>
+<div class="tournament-banner-wrap">
+  <img src="/static/uploads/banners/{{ tournament.banner_image }}"
+       alt="{{ tournament.name }}" class="tournament-banner"/>
+</div>
 {% endif %}
 
 <div class="tournament-header">
   <div class="container">
     <h1>
       {{ tournament.name }}
-      <span class="start-time">– Start time: {{ tournament.start_time }}</span>
-      <span class="badge badge-{{ tournament.status }}" style="margin-left:10px;">
+      <span class="start-time">Release {{ tournament.start_time }}</span>
+      <span class="badge badge-{{ tournament.status }}">
         {{ tournament.status | replace("_"," ") | title }}
       </span>
     </h1>
@@ -23,24 +25,14 @@
 <div class="container page-body">
 
   {% if tournament.info_text %}
-  <div class="info-box">Tournament Info: {{ tournament.info_text }}</div>
+  <div class="info-box" dir="auto">{{ tournament.info_text }}</div>
   {% endif %}
 
-  {% if tournament.is_published %}
-  <section class="published-summary" aria-label="Published tournament totals">
-    <div class="published-summary-heading">
-      <span>Published Results</span>
-      {% if tournament.published_at %}
-      <time datetime="{{ tournament.published_at }}">{{ tournament.published_at[:10] }}</time>
-      {% endif %}
-    </div>
-    <div class="published-summary-values">
-      <span><strong>Lofts:</strong> {{ tournament.published_lofts }}</span>
-      <span><strong>Total pigeons:</strong> {{ tournament.published_total_pigeons }}</span>
-      <span><strong>Pigeons landed:</strong> {{ tournament.published_pigeons_landed }}</span>
-      <span><strong>Pigeons remaining:</strong> {{ tournament.published_pigeons_remaining }}</span>
-    </div>
-  </section>
+  {% if extra.enabled %}
+  <p class="extra-note">
+    Each loft may fly a <strong>{{ extra.name }}</strong> on top of its {{ tournament.num_pigeons }} regular pigeons.
+    {% if extra.counts %}Its time counts towards the total.{% else %}Its time is shown for interest and does not change the standings.{% endif %}
+  </p>
   {% endif %}
 
   {% set floating_text = tournament.page_ticker_text or settings.detail_ticker_text %}
@@ -55,32 +47,59 @@
   </div>
   {% endif %}
 
-  <!-- DATE TABS: horizontal scrolling strip so 15 tabs never wrap -->
+  <!-- DAY TABS · one row, scrolls sideways, never wraps -->
   <div class="date-tabs-wrap">
-    <div class="date-tabs">
+    <div class="date-tabs" role="tablist">
       {% for rd in round_dates %}
-      <a class="date-tab" data-col="round-{{ loop.index }}" href="javascript:void(0)">
+      <button type="button" class="date-tab" role="tab" data-col="round-{{ loop.index }}" data-day="{{ loop.index }}">
         <span class="date-tab-day">D{{ loop.index }}</span>
         <span class="date-tab-date">{{ rd | replace("-", ".") | regex_replace('^(\d{4})\.(\d{2})\.(\d{2})$', '\\3.\\2') }}</span>
-      </a>
+      </button>
       {% endfor %}
-      <a class="date-tab date-tab-total active" data-col="total" href="javascript:void(0)">
+      <button type="button" class="date-tab date-tab-total active" role="tab" data-col="total" data-day="total">
         <span class="date-tab-day">Total</span>
-      </a>
+      </button>
+      {% if tournament.is_published %}
+      <button type="button" class="date-tab date-tab-result" role="tab" data-col="result" data-day="result">
+        <span class="date-tab-day">🏆 Result</span>
+      </button>
+      {% endif %}
     </div>
   </div>
 
-  <!-- SEARCH -->
-  <div class="search-wrap">
-    <input type="text" id="search-input" class="search-input" placeholder="Search by name, city…"/>
+  <!-- Winner-bird announcements for the open day -->
+  {% for rd in round_dates %}
+    {% set meta = round_meta.get(loop.index) %}
+    {% if meta and (meta.first_winner or meta.last_winner) %}
+    <div class="winner-notes round-col round-{{ loop.index }}" style="display:none;">
+      {% if meta.first_winner %}
+      <div class="winner-note winner-note-first" dir="auto">
+        <span class="winner-note-label">First winner bird</span>
+        <span class="winner-note-value">{{ meta.first_winner }}</span>
+      </div>
+      {% endif %}
+      {% if meta.last_winner %}
+      <div class="winner-note winner-note-last" dir="auto">
+        <span class="winner-note-label">Last winner bird</span>
+        <span class="winner-note-value">{{ meta.last_winner }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  {% endfor %}
+
+  <div class="table-toolbar">
+    <div class="search-wrap">
+      <input type="search" id="search-input" class="search-input" placeholder="Search by name, city…" aria-label="Search participants"/>
+    </div>
+    <p class="day-hint" id="day-hint"></p>
   </div>
 
-  <!-- TABLE
-       On mobile (≤600px) the "total" view shows only: SR · Pic · Name · Pigeons · Total Time
-       Individual day tabs show: SR · Pic · Name · Pigeons(day) · Time(day)
-       On desktop all day columns are visible in the total view as before.
-  -->
-  <div class="t-wrap">
+  <!-- LEADERBOARD
+       Total view : SR · Pic · Name · Pigeons · each day's total · Grand total
+       Day view   : SR · Pic · Name · Pigeon 1…N arrival times · Day total
+       Below 760px each row becomes a card and the pigeon times wrap into chips. -->
+  <div class="t-wrap" id="leaderboard-panel">
     <table class="leaderboard-table">
       <thead>
         <tr>
@@ -88,81 +107,147 @@
           <th class="pic-col">Pic</th>
           <th class="name-col">Name</th>
 
-          <!-- per-day pigeons: only when that day tab is active -->
-          {% for rd in round_dates %}
-          <th class="time-col round-col round-{{ loop.index }} pigeons-day-col" style="display:none;">
-            🐦<br/><span style="font-size:0.7rem;font-weight:400;">D{{ loop.index }}</span>
-          </th>
-          {% endfor %}
+          <th class="pigeons-col total-col">🐦</th>
 
-          <!-- total pigeons: total tab only -->
-          <th class="time-col total-col">🐦</th>
-
-          <!-- per-day times: visible on that day's tab; on mobile also hidden on total tab -->
           {% for rd in round_dates %}
-          <th class="time-col round-col round-{{ loop.index }} desktop-day-col">
+          <th class="time-col total-col total-day-col">
             D{{ loop.index }}<br/>
-            <span style="font-size:0.7rem;font-weight:400;">
-              {{ rd | replace("-", ".") | regex_replace('^(\d{4})\.(\d{2})\.(\d{2})$', '\\3.\\2') }}
-            </span>
+            <span class="th-sub">{{ rd | replace("-", ".") | regex_replace('^(\d{4})\.(\d{2})\.(\d{2})$', '\\3.\\2') }}</span>
           </th>
           {% endfor %}
 
-          <th class="time-col total-col">Total</th>
+          {% for n in range(1, pigeon_slots + 1) %}
+          <th class="time-col pigeon-col{% for rd in round_dates %} round-col round-{{ loop.index }}{% endfor %}"
+              style="display:none;">Pigeon {{ n }}</th>
+          {% endfor %}
+          {% if extra.enabled %}
+          <th class="time-col pigeon-col extra-col{% for rd in round_dates %} round-col round-{{ loop.index }}{% endfor %}"
+              style="display:none;" title="{% if extra.counts %}Counted in the total{% else %}Shown but not counted{% endif %}">
+            {{ extra.name }}
+          </th>
+          {% endif %}
+
+          {% for rd in round_dates %}
+          <th class="time-col day-total-col round-col round-{{ loop.index }}" style="display:none;">Total</th>
+          {% endfor %}
+
+          <th class="time-col total-col grand-total-col">Total</th>
         </tr>
       </thead>
       <tbody>
         {% for p in participants %}
-        <tr class="data-row" data-search="{{ p.name | lower }} {{ p.city | lower }}">
+        <tr class="data-row"
+            data-search="{{ p.name | lower }} {{ p.city | lower }}"
+            data-total="{{ p.total_seconds }}"
+            {% for r in p.rounds %}data-day-{{ r.round_number }}="{{ r.seconds }}" {% endfor %}>
+
           <td class="sr-cell">{{ p.sr }}</td>
           <td class="pic-cell">
             {% if p.image %}
-            <img src="/static/uploads/participants/{{ p.image }}"
-                 alt="{{ p.name }}" class="participant-img"/>
+            <img src="/static/uploads/participants/{{ p.image }}" alt="{{ p.name }}" class="participant-img" loading="lazy"/>
             {% else %}
-            <div class="participant-img-placeholder">👤</div>
+            <div class="participant-img-placeholder" aria-hidden="true">👤</div>
             {% endif %}
           </td>
-          <td>
-            <div class="participant-name">{{ p.name }}</div>
-            {% if p.city %}<div class="participant-city">{{ p.city }}</div>{% endif %}
+          <td class="name-cell">
+            <div class="participant-name" dir="auto">{{ p.name }}</div>
+            {% if p.city %}<div class="participant-city" dir="auto">{{ p.city }}</div>{% endif %}
           </td>
 
-          <!-- per-day pigeons -->
+          <td class="pigeons-cell total-col" data-label="Pigeons" title="{{ p.landed_label }}">{{ p.pigeons_label }}</td>
+
           {% for r in p.rounds %}
-          <td class="time-cell round-col round-{{ r.round_number }} pigeons-day-col" style="display:none;text-align:center;">
-            {{ r.pigeons_landed }}/{{ p.num_pigeons }}
-          </td>
+          <td class="time-cell total-col total-day-col {{ r.cell_class }}"
+              data-label="D{{ r.round_number }}">{{ r.display }}</td>
           {% endfor %}
 
-          <!-- total pigeons -->
-          <td class="total-col" style="text-align:center;">
-            {{ p.total_landed }}/{{ p.num_pigeons }}
-          </td>
-
-          <!-- per-day times -->
           {% for r in p.rounds %}
-          <td class="time-cell round-col round-{{ r.round_number }} desktop-day-col {{ r.cell_class }}">
-            {{ r.display }}
-          </td>
+            {% for cell in r.cells %}
+            <td class="time-cell pigeon-col round-col round-{{ r.round_number }} pigeon-{{ cell.state }}{% if cell.is_extra %} extra-col{% endif %}"
+                style="display:none;"
+                data-label="{{ cell.label }}"
+                {% if cell.state == 'landed' %}title="Flew {{ cell.flight_display }} from {{ r.release_time }}"{% endif %}>
+              {% if cell.state == 'missed' %}
+              <span class="bad-luck">Bad Luck</span>
+              {% elif cell.state == 'none' %}
+              <span class="cell-none">—</span>
+              {% else %}
+              {{ cell.display }}
+              {% endif %}
+            </td>
+            {% endfor %}
           {% endfor %}
 
-          <td class="total-cell total-col">{{ p.total_display }}</td>
+          {% for r in p.rounds %}
+          <td class="total-cell day-total-col round-col round-{{ r.round_number }} {{ r.cell_class }}"
+              style="display:none;" data-label="Day total">{{ r.display }}</td>
+          {% endfor %}
+
+          <td class="total-cell total-col grand-total-col" data-label="Total">{{ p.total_display }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+
+    {% if not participants %}
+    <p class="empty-note">No lofts have been added to this tournament yet.</p>
+    {% endif %}
   </div>
 
   <div class="table-info" id="table-info">
     Showing {{ participants | length }} of {{ participants | length }} entries
   </div>
 
-</div>
-{% endblock %}
+  <!-- RESULT PANEL -->
+  {% if tournament.is_published %}
+  <section class="result-panel" id="result-panel" hidden>
+    {% if tournament.published_remarks %}
+    <blockquote class="result-remarks" dir="auto">{{ tournament.published_remarks }}</blockquote>
+    {% endif %}
+    <div class="result-summary">
+      <span><strong>Lofts</strong>{{ tournament.published_lofts }}</span>
+      <span><strong>Total pigeons</strong>{{ tournament.published_total_pigeons }}</span>
+      <span><strong>Pigeons landed</strong>{{ tournament.published_pigeons_landed }}</span>
+      <span><strong>Remaining</strong>{{ tournament.published_pigeons_remaining }}</span>
+    </div>
 
-{% block scripts %}
-<script>
-// Tab switching already handled in main.js
-</script>
+    {% if participants %}
+    <ol class="podium">
+      {% for p in participants[:3] %}
+      <li class="podium-place podium-{{ loop.index }}">
+        <span class="podium-rank">{% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% else %}🥉{% endif %}</span>
+        {% if p.image %}
+        <img src="/static/uploads/participants/{{ p.image }}" alt="" class="podium-img" loading="lazy"/>
+        {% else %}
+        <div class="participant-img-placeholder podium-img" aria-hidden="true">👤</div>
+        {% endif %}
+        <span class="podium-name" dir="auto">{{ p.name }}</span>
+        {% if p.city %}<span class="podium-city" dir="auto">{{ p.city }}</span>{% endif %}
+        <span class="podium-time">{{ p.total_display }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+
+    <ol class="result-list">
+      {% for p in participants %}
+      <li class="result-row">
+        <span class="result-sr">{{ p.sr }}</span>
+        <span class="result-name" dir="auto">
+          {{ p.name }}
+          {% if p.city %}<small>{{ p.city }}</small>{% endif %}
+        </span>
+        <span class="result-pigeons">{{ p.pigeons_label }}</span>
+        <span class="result-time">{{ p.total_display }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+    {% endif %}
+
+    {% if tournament.published_at %}
+    <p class="result-footnote">Published {{ tournament.published_at[:10] }}</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+</div>
 {% endblock %}

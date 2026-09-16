@@ -17,16 +17,78 @@
     </div>
     <div class="form-group">
       <label for="template">Template *</label>
-      <select id="template" name="template" required>
+      <select id="template" name="template" required data-template-select>
         {% for key, val in templates_map.items() %}
+        {% if key != 'custom' %}
         <option value="{{ key }}"
           {% if tournament and tournament.template == key %}selected{% endif %}>
           {{ val.label }}
         </option>
+        {% endif %}
         {% endfor %}
       </select>
+      <div class="form-hint">Pick a ready-made shape, or tick "Enter manually" below to set your own.</div>
     </div>
   </div>
+
+  <div class="form-row" style="margin-top:-8px;margin-bottom:4px;">
+    <div class="form-group">
+      <label class="form-check">
+        <input type="checkbox" id="manual_toggle" name="template_manual" value="on"
+               data-manual-toggle
+               {% if tournament and tournament.template == 'custom' %}checked{% endif %}/>
+        Enter manually (custom days &amp; pigeons)
+      </label>
+    </div>
+  </div>
+
+  <div class="form-row" data-custom-shape hidden>
+    <div class="form-group">
+      <label for="custom_rounds">Number of days</label>
+      <input type="number" id="custom_rounds" name="custom_rounds" min="1" max="60"
+             value="{{ tournament.num_rounds if tournament else 1 }}"/>
+    </div>
+    <div class="form-group">
+      <label for="custom_pigeons">Pigeons per loft</label>
+      <input type="number" id="custom_pigeons" name="custom_pigeons" min="1" max="50"
+             value="{{ tournament.num_pigeons if tournament else 7 }}"/>
+      <div class="form-hint">The regular flight. The extra bird below is counted separately.</div>
+    </div>
+  </div>
+
+  <fieldset class="extra-pigeon-box">
+    <legend>Extra pigeon</legend>
+    <label class="form-check">
+      <input type="checkbox" name="extra_pigeon" value="on" data-extra-toggle
+             {% if tournament and tournament.extra_pigeon %}checked{% endif %}/>
+      This tournament allows one extra pigeon on top of the regular flight
+    </label>
+
+    <div class="form-row" data-extra-fields hidden>
+      <div class="form-group">
+        <label for="extra_pigeon_name">What it is called</label>
+        <input type="text" id="extra_pigeon_name" name="extra_pigeon_name"
+               value="{{ tournament.extra_pigeon_name if tournament else 'Nominated Pigeon' }}"
+               placeholder="e.g. Child Pigeon, Nominated Pigeon"/>
+        <div class="form-hint">This name is the column heading on the leaderboard.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-check" style="margin-top:26px;">
+          <input type="checkbox" name="extra_counts" value="on"
+                 {% if tournament and tournament.extra_counts %}checked{% endif %}/>
+          Add its time to the loft's total
+        </label>
+        <div class="form-hint">
+          Leave this off to show the extra bird's time without it affecting the
+          standings — useful when it is flown only to see how it performs.
+        </div>
+      </div>
+    </div>
+    <div class="form-hint">
+      Each loft is then ticked individually on the participants page, so some can
+      fly the extra and others need not.
+    </div>
+  </fieldset>
 
   <div class="form-row">
     <div class="form-group">
@@ -50,6 +112,18 @@
              value="{{ tournament.start_time if tournament else '05:00' }}"/>
       <div class="form-hint">Time pigeons are released each day</div>
     </div>
+    <div class="form-group">
+      <label for="scoring_pigeons">Pigeons counted per day</label>
+      <input type="number" id="scoring_pigeons" name="scoring_pigeons" min="0" max="100"
+             value="{{ tournament.scoring_pigeons if tournament else 0 }}"/>
+      <div class="form-hint">
+        0 adds up every pigeon that comes home. Set it to 7 when a loft flies 8 birds
+        but only its best 7 flights count — the shortest flight is then dropped.
+      </div>
+    </div>
+  </div>
+
+  <div class="form-row">
     <div class="form-group">
       <label for="banner_image">Banner Image</label>
       <input type="file" id="banner_image" name="banner_image" accept="image/*"/>
@@ -95,4 +169,52 @@
   </div>
 
 </form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const select       = document.querySelector("[data-template-select]");
+    const manualToggle = document.querySelector("[data-manual-toggle]");
+    const custom       = document.querySelector("[data-custom-shape]");
+    const extraToggle  = document.querySelector("[data-extra-toggle]");
+    const extraFields  = document.querySelector("[data-extra-fields]");
+
+    const syncManual = () => {
+      const on = manualToggle && manualToggle.checked;
+      if (custom)  custom.hidden  = !on;
+      if (select)  select.disabled = on;
+      // When manual is on, inject the "custom" value so the server sees it.
+      if (select) {
+        if (on) {
+          select.dataset.prevValue = select.value;
+          // Add a hidden input carrying "custom" so the disabled select isn't skipped.
+          let hidden = document.getElementById("_template_custom_hidden");
+          if (!hidden) {
+            hidden = document.createElement("input");
+            hidden.type = "hidden";
+            hidden.name = "template";
+            hidden.id   = "_template_custom_hidden";
+            select.parentNode.appendChild(hidden);
+          }
+          hidden.value = "custom";
+        } else {
+          const hidden = document.getElementById("_template_custom_hidden");
+          if (hidden) hidden.remove();
+          if (select.dataset.prevValue) select.value = select.dataset.prevValue;
+        }
+      }
+    };
+
+    const syncExtra = () => {
+      if (extraFields) extraFields.hidden = !extraToggle.checked;
+    };
+
+    manualToggle?.addEventListener("change", syncManual);
+    extraToggle?.addEventListener("change",  syncExtra);
+
+    syncManual();
+    syncExtra();
+  }());
+</script>
 {% endblock %}

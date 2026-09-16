@@ -57,6 +57,10 @@ def init_db():
                 template TEXT NOT NULL,
                 num_rounds INTEGER NOT NULL,
                 num_pigeons INTEGER NOT NULL DEFAULT 7,
+                scoring_pigeons INTEGER NOT NULL DEFAULT 0,
+                extra_pigeon INTEGER NOT NULL DEFAULT 0,
+                extra_pigeon_name TEXT NOT NULL DEFAULT 'Nominated Pigeon',
+                extra_counts INTEGER NOT NULL DEFAULT 0,
                 start_date TEXT NOT NULL,
                 round_interval_days INTEGER NOT NULL DEFAULT 1,
                 info_text TEXT DEFAULT '',
@@ -72,6 +76,7 @@ def init_db():
                 published_pigeons_landed INTEGER NOT NULL DEFAULT 0,
                 published_pigeons_remaining INTEGER NOT NULL DEFAULT 0,
                 published_at TEXT NOT NULL DEFAULT '',
+                published_remarks TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
 
@@ -82,6 +87,7 @@ def init_db():
                 city TEXT DEFAULT '',
                 image TEXT DEFAULT '',
                 num_pigeons INTEGER NOT NULL DEFAULT 7,
+                has_extra INTEGER NOT NULL DEFAULT 0,
                 pigeons_landed INTEGER NOT NULL DEFAULT 7,
                 display_order INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -99,6 +105,40 @@ def init_db():
                 pigeons_landed INTEGER NOT NULL DEFAULT 0,
                 UNIQUE(participant_id, round_number),
                 FOREIGN KEY (participant_id) REFERENCES participants(id) ON DELETE CASCADE,
+                FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE
+            );
+
+            /* One row per pigeon, per participant, per day.
+               arrival_time is the clock time the pigeon sat down ("HH:MM").
+               flight_seconds is arrival_time minus that day's release time,
+               stored so the leaderboard never has to recompute it. */
+            CREATE TABLE IF NOT EXISTS pigeon_times (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                participant_id INTEGER NOT NULL,
+                tournament_id INTEGER NOT NULL,
+                round_number INTEGER NOT NULL,
+                pigeon_number INTEGER NOT NULL,   /* 0 = the named extra bird */
+                arrival_time TEXT NOT NULL DEFAULT '',
+                flight_seconds INTEGER NOT NULL DEFAULT 0,
+                is_missed INTEGER NOT NULL DEFAULT 0,
+                UNIQUE(participant_id, round_number, pigeon_number),
+                FOREIGN KEY (participant_id) REFERENCES participants(id) ON DELETE CASCADE,
+                FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_pigeon_times_lookup
+                ON pigeon_times(tournament_id, round_number);
+
+            /* Per-day extras: an optional release-time override plus the two
+               winner-bird announcements shown above the day's table. */
+            CREATE TABLE IF NOT EXISTS round_meta (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tournament_id INTEGER NOT NULL,
+                round_number INTEGER NOT NULL,
+                start_time TEXT NOT NULL DEFAULT '',
+                first_winner TEXT NOT NULL DEFAULT '',
+                last_winner TEXT NOT NULL DEFAULT '',
+                UNIQUE(tournament_id, round_number),
                 FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE
             );
         """)
@@ -141,6 +181,24 @@ def init_db():
             conn.execute(
                 "ALTER TABLE tournaments ADD COLUMN show_on_home INTEGER NOT NULL DEFAULT 0"
             )
+        if "extra_pigeon" not in tournament_columns:
+            conn.execute(
+                "ALTER TABLE tournaments ADD COLUMN extra_pigeon INTEGER NOT NULL DEFAULT 0"
+            )
+        if "extra_pigeon_name" not in tournament_columns:
+            conn.execute(
+                "ALTER TABLE tournaments ADD COLUMN extra_pigeon_name TEXT NOT NULL DEFAULT 'Nominated Pigeon'"
+            )
+        if "extra_counts" not in tournament_columns:
+            conn.execute(
+                "ALTER TABLE tournaments ADD COLUMN extra_counts INTEGER NOT NULL DEFAULT 0"
+            )
+        if "scoring_pigeons" not in tournament_columns:
+            # 0 means "add up every pigeon that lands". Set it to 7 on a tournament
+            # where lofts fly 8 birds but only the best 7 times count.
+            conn.execute(
+                "ALTER TABLE tournaments ADD COLUMN scoring_pigeons INTEGER NOT NULL DEFAULT 0"
+            )
         selected_home_rows = conn.execute(
             "SELECT id FROM tournaments WHERE show_on_home=1 ORDER BY created_at DESC, id DESC"
         ).fetchall()
@@ -159,6 +217,7 @@ def init_db():
             "published_pigeons_landed": "INTEGER NOT NULL DEFAULT 0",
             "published_pigeons_remaining": "INTEGER NOT NULL DEFAULT 0",
             "published_at": "TEXT NOT NULL DEFAULT ''",
+            "published_remarks": "TEXT NOT NULL DEFAULT ''",
         }
         needs_stats_backfill = "published_lofts" not in tournament_columns
         for column, definition in stats_columns.items():
@@ -176,6 +235,10 @@ def init_db():
         participant_columns = {
             row[1] for row in conn.execute("PRAGMA table_info(participants)").fetchall()
         }
+        if "has_extra" not in participant_columns:
+            conn.execute(
+                "ALTER TABLE participants ADD COLUMN has_extra INTEGER NOT NULL DEFAULT 0"
+            )
         if "pigeons_landed" not in participant_columns:
             conn.execute(
                 "ALTER TABLE participants ADD COLUMN pigeons_landed INTEGER NOT NULL DEFAULT 0"
@@ -258,6 +321,10 @@ def get_round_dates(start_date: str, num_rounds: int, interval: int) -> list:
     return [(start + timedelta(days=i * interval)).isoformat() for i in range(num_rounds)]
 
 
+# ─────────────────────────────────────────────
+# TIME HELPERS
+# ─────────────────────────────────────────────
+
 def seconds_to_hhmmss(total_seconds):
     if total_seconds is None:
         return "00:00:00"
@@ -279,3 +346,121 @@ def hhmmss_to_seconds(time_str):
         except ValueError:
             return 0
     return 0
+
+
+def seconds_to_hhmm(total_seconds):
+    """Flight totals are shown as hours:minutes, e.g. 78:37.
+
+    Hours are not capped at 24 — a three day total of 78 hours prints as 78:37.
+    """
+    if not total_seconds:
+        return "00:00"
+    total_seconds = int(total_seconds)
+    h = total_seconds // 3600
+    m = (total_seconds % 3600) // 60
+    return f"{h:02d}:{m:02d}"
+
+
+def normalise_clock(value):
+    """Accept 13:53, 1:53, 13:53:00 or 1353 and return "13:53". '' if unusable."""
+    if not value:
+        return ""
+    raw = str(value).strip()
+    if not raw:
+        return ""
+    if ":" in raw:
+        parts = raw.split(":")
+    elif raw.isdigit() and len(raw) in (3, 4):
+        parts = [raw[:-2], raw[-2:]]
+    else:
+        return ""
+    try:
+        hours = int(parts[0])
+        minutes = int(parts[1])
+    except (ValueError, IndexError):
+        return ""
+    if not (0 <= hours <= 23) or not (0 <= minutes <= 59):
+        return ""
+    return f"{hours:02d}:{minutes:02d}"
+
+
+def clock_to_seconds(value):
+    """Seconds since midnight for a "HH:MM" clock time, or None."""
+    clock = normalise_clock(value)
+    if not clock:
+        return None
+    hours, minutes = clock.split(":")
+    return int(hours) * 3600 + int(minutes) * 60
+
+
+def flight_seconds(arrival_clock, release_clock):
+    """How long a pigeon stayed up: arrival clock time minus the release time.
+
+    A pigeon released at 06:00 that sits at 13:53 flew 7h53m. A pigeon that sits
+    after midnight (arrival earlier on the clock than the release) is treated as
+    the next day, so 06:00 -> 01:30 counts as 19h30m rather than a negative time.
+    """
+    arrival = clock_to_seconds(arrival_clock)
+    release = clock_to_seconds(release_clock)
+    if arrival is None or release is None:
+        return 0
+    elapsed = arrival - release
+    if elapsed < 0:
+        elapsed += 24 * 3600
+    return elapsed
+
+
+def score_durations(durations, scoring_limit=0):
+    """Add up a day's flight times.
+
+    scoring_limit 0 counts every pigeon that landed. A positive limit counts only
+    the best that many flights, which is how a loft flying 8 birds for a 7 bird
+    tournament is scored: the shortest flight is dropped.
+    """
+    ordered = sorted((d for d in durations if d > 0), reverse=True)
+    if scoring_limit and scoring_limit > 0:
+        ordered = ordered[:scoring_limit]
+    return sum(ordered)
+
+
+# ─────────────────────────────────────────────
+# PER-DAY EXTRAS (release time override, winner birds)
+# ─────────────────────────────────────────────
+
+def get_round_meta(tournament_id, conn):
+    rows = conn.execute(
+        "SELECT * FROM round_meta WHERE tournament_id=?", (tournament_id,)
+    ).fetchall()
+    return {row["round_number"]: dict(row) for row in rows}
+
+
+def save_round_meta(conn, tournament_id, round_number, start_time, first_winner, last_winner):
+    conn.execute(
+        """INSERT INTO round_meta (tournament_id, round_number, start_time, first_winner, last_winner)
+           VALUES (?,?,?,?,?)
+           ON CONFLICT(tournament_id, round_number)
+           DO UPDATE SET start_time=excluded.start_time,
+                         first_winner=excluded.first_winner,
+                         last_winner=excluded.last_winner""",
+        (tournament_id, round_number, start_time, first_winner, last_winner),
+    )
+
+
+def release_time_for_round(tournament, round_meta, round_number):
+    """The day's own release time if the admin set one, otherwise the tournament's."""
+    meta = round_meta.get(round_number) or {}
+    return normalise_clock(meta.get("start_time")) or normalise_clock(tournament["start_time"]) or "05:00"
+
+
+EXTRA_PIGEON_NUMBER = 0  # the named extra bird lives outside the 1..N run
+
+
+def extra_config(tournament):
+    """The tournament's extra-bird setup, with a usable name even if blank."""
+    enabled = bool(tournament["extra_pigeon"])
+    name = (tournament["extra_pigeon_name"] or "").strip() or "Nominated Pigeon"
+    return {
+        "enabled": enabled,
+        "name": name,
+        "counts": bool(tournament["extra_counts"]),
+    }

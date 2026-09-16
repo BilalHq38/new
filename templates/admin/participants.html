@@ -36,6 +36,20 @@
       <input type="file" name="image" accept="image/*"/>
     </div>
   </div>
+  {% if tournament.extra_pigeon %}
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-check">
+        <input type="checkbox" name="has_extra" value="on"/>
+        Flying the {{ tournament.extra_pigeon_name }}
+      </label>
+      <div class="form-hint">
+        Adds one more time box for this loft
+        {% if tournament.extra_counts %}, counted in its total{% else %}, shown but not counted{% endif %}.
+      </div>
+    </div>
+  </div>
+  {% endif %}
   <button type="submit" class="btn btn-success">Add Participant</button>
 </form>
 
@@ -69,7 +83,9 @@
         </td>
         <td>{{ p.name }}</td>
         <td>{{ p.city }}</td>
-        <td style="text-align:center;">{{ p.num_pigeons }}</td>
+        <td style="text-align:center;">
+          {{ p.num_pigeons }}{% if tournament.extra_pigeon and p.has_extra %} + 1{% endif %}
+        </td>
         <td>
           <div class="action-btns">
             <a href="/admin/participant/{{ p.id }}/edit" class="btn btn-sm btn-secondary">Edit</a>

@@ -18,6 +18,15 @@
 <nav class="navbar">
   <!-- TOP BAR: logo left, meta right, full width -->
   <div class="navbar-topbar">
+    {% if request.url.path != '/' %}
+    <button type="button" class="nav-back-btn" data-back aria-label="Go back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </button>
+    {% endif %}
+
     <a href="/" class="navbar-brand" aria-label="Gazi Imam Champions Home">
       <img src="/static/images/logo.svg"
            class="navbar-logo"
@@ -35,19 +44,13 @@
       <span class="navbar-meta-online">🟢 Online: {{ online_count }}</span>
     </div>
 
-    <button class="hamburger" id="hamburger" aria-label="Menu">&#9776;</button>
+    <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">&#9776;</button>
   </div>
 
   <!-- NAV LINKS ROW -->
   <div class="navbar-links-row">
     <ul class="nav-links" id="nav-links">
       <li><a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Home</a></li>
-
-      {% if request.url.path != '/' %}
-      <li>
-        <a href="javascript:history.back()" class="nav-back-btn" aria-label="Go back">&#8592; Back</a>
-      </li>
-      {% endif %}
 
       <li class="dropdown">
         <button>Tournaments ▾</button>

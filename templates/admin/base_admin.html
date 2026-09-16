@@ -4,27 +4,28 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{% block title %}Admin{% endblock %} – Gazi Imam Champions</title>
+  <link rel="icon" type="image/svg+xml" href="/static/images/logo.svg"/>
   <link rel="stylesheet" href="/static/css/style.css"/>
+  {% block head %}{% endblock %}
 </head>
 <body>
-<div class="admin-wrap">
 
-  <!-- SIDEBAR -->
+<div class="admin-wrap">
   <aside class="admin-sidebar">
-    <h2>🕊️ Admin Panel</h2>
+    <h2>Admin panel</h2>
     <a href="/admin" class="{% if request.url.path == '/admin' %}active{% endif %}">Dashboard</a>
-    <a href="/admin/tournament/new">+ New Tournament</a>
-    <a href="/admin/settings" class="{% if '/settings' in request.url.path %}active{% endif %}">Settings</a>
-    <a href="/" target="_blank" style="margin-top:20px;opacity:0.7;">View Site ↗</a>
-    <a href="/admin/logout" style="margin-top:auto;color:rgba(255,100,100,0.9);">Logout</a>
+    <a href="/admin/tournament/new" class="{% if request.url.path == '/admin/tournament/new' %}active{% endif %}">New tournament</a>
+    <a href="/admin/settings" class="{% if request.url.path == '/admin/settings' %}active{% endif %}">Site settings</a>
+    <a href="/" target="_blank">View site</a>
+    <a href="/admin/logout">Log out</a>
   </aside>
 
-  <!-- CONTENT -->
   <main class="admin-content">
     {% block content %}{% endblock %}
   </main>
-
 </div>
+
 <script src="/static/js/main.js"></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

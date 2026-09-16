@@ -2,50 +2,81 @@
 (function initClock() {
   const el = document.getElementById("live-clock");
   if (!el) return;
-  // Build inner structure once
   el.innerHTML = '<span class="navbar-clock-date"></span><span class="navbar-clock-time"></span>';
   const dateEl = el.querySelector(".navbar-clock-date");
   const timeEl = el.querySelector(".navbar-clock-time");
   function tick() {
     const now = new Date();
     const pad = n => String(n).padStart(2, "0");
-    dateEl.textContent = `${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}`;
+    dateEl.textContent = `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()}`;
     timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
   }
   tick();
   setInterval(tick, 1000);
 }());
 
-// ─── FOOTER HIDE AT BOTTOM ───
-(function initFooterHide() {
+// ─── CREDIT BAR ───
+// Phones: show it for a few seconds, then get it out of the way. Any scroll
+// hides it immediately; when scrolling stops it comes back briefly and hides
+// again, so it never sits on top of the table the person is reading.
+// Desktop: there is room for it, so it just stays put.
+(function initFooterAutoHide() {
   const footer = document.querySelector(".site-footer");
   if (!footer) return;
-  let ticking = false;
-  function checkScroll() {
-    // Hide footer when within ~60 px of the document bottom
-    const scrollBottom = window.scrollY + window.innerHeight;
-    const docHeight = document.documentElement.scrollHeight;
-    if (docHeight - scrollBottom < 60) {
-      footer.classList.add("footer-hidden");
-    } else {
-      footer.classList.remove("footer-hidden");
-    }
-    ticking = false;
+
+  const SHOW_MS = 3000;
+  const mobile = () => window.matchMedia("(max-width: 768px)").matches;
+  let hideTimer = null;
+
+  const hide = () => footer.classList.add("footer-hidden");
+  const show = () => footer.classList.remove("footer-hidden");
+
+  function showThenHide() {
+    show();
+    window.clearTimeout(hideTimer);
+    hideTimer = window.setTimeout(() => { if (mobile()) hide(); }, SHOW_MS);
   }
-  window.addEventListener("scroll", function () {
-    if (!ticking) { requestAnimationFrame(checkScroll); ticking = true; }
+
+  let scrollTimer = null;
+  window.addEventListener("scroll", () => {
+    if (!mobile()) { show(); return; }
+    hide();
+    window.clearTimeout(scrollTimer);
+    scrollTimer = window.setTimeout(showThenHide, 260);
   }, { passive: true });
-  checkScroll();
+
+  window.addEventListener("resize", () => {
+    if (mobile()) showThenHide();
+    else { window.clearTimeout(hideTimer); show(); }
+  });
+
+  if (mobile()) showThenHide();
 }());
 
 // ─── HAMBURGER MENU ───
 const hamburger = document.getElementById("hamburger");
-const navLinks  = document.getElementById("nav-links");
+const navLinks = document.getElementById("nav-links");
 if (hamburger && navLinks) {
   hamburger.addEventListener("click", () => {
-    navLinks.classList.toggle("open");
+    const open = navLinks.classList.toggle("open");
+    hamburger.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  document.addEventListener("click", (event) => {
+    if (!navLinks.classList.contains("open")) return;
+    if (navLinks.contains(event.target) || hamburger.contains(event.target)) return;
+    navLinks.classList.remove("open");
+    hamburger.setAttribute("aria-expanded", "false");
   });
 }
+
+// ─── BACK BUTTON ───
+// Falls back to the home page when the tab was opened straight onto this page.
+document.querySelectorAll("[data-back]").forEach((button) => {
+  button.addEventListener("click", () => {
+    if (window.history.length > 1) window.history.back();
+    else window.location.href = "/";
+  });
+});
 
 // ─── LIVE SEARCH ───
 const searchInput = document.getElementById("search-input");
@@ -56,97 +87,203 @@ if (searchInput) {
     let visible = 0;
     rows.forEach(row => {
       const text = row.dataset.search || "";
-      if (!q || text.includes(q)) {
-        row.classList.remove("hidden-row");
-        visible++;
-      } else {
-        row.classList.add("hidden-row");
-      }
+      if (!q || text.includes(q)) { row.classList.remove("hidden-row"); visible++; }
+      else { row.classList.add("hidden-row"); }
     });
     const info = document.getElementById("table-info");
-    if (info) {
-      info.textContent = `Showing ${visible} of ${rows.length} entries`;
-    }
+    if (info) info.textContent = `Showing ${visible} of ${rows.length} entries`;
   });
 }
 
-// ─── DATE TABS ───
-// On mobile (≤600 px) the "Total" tab shows only SR · Pic · Name · 🐦 total · Total Time.
-// The individual day columns (.desktop-day-col) are hidden on mobile in total view —
-// the user taps a day tab to drill into a single day instead.
-// On desktop all day columns remain visible in the total view.
+// ─── LEADERBOARD TABS ───
+// Total   : pigeons home, each day's total, grand total.
+// A day   : that day's pigeon arrival times, then the day total.
+// Result  : final standings, only once the tournament is published.
+// Rows re-sort on every switch, so SR always follows the column on show.
+(function initLeaderboardTabs() {
+  const tabs = Array.from(document.querySelectorAll(".date-tab"));
+  if (!tabs.length) return;
 
-function isMobile() { return window.innerWidth <= 600; }
+  const table = document.querySelector(".leaderboard-table");
+  const tbody = table ? table.querySelector("tbody") : null;
+  const leaderboardPanel = document.getElementById("leaderboard-panel");
+  const resultPanel = document.getElementById("result-panel");
+  const tableInfo = document.getElementById("table-info");
+  const dayHint = document.getElementById("day-hint");
+  const searchWrap = document.querySelector(".table-toolbar");
 
-function activateTab(tabEl, colClass) {
-  document.querySelectorAll(".date-tab").forEach(t => t.classList.remove("active"));
-  tabEl.classList.add("active");
+  function sortRows(key) {
+    if (!tbody) return;
+    const rows = Array.from(tbody.querySelectorAll("tr.data-row"));
+    const value = (row) => Number(
+      key === "total" ? row.dataset.total : row.dataset["day" + key]
+    ) || 0;
+    rows.sort((a, b) => value(b) - value(a));
+    rows.forEach((row, index) => {
+      tbody.appendChild(row);
+      const sr = row.querySelector(".sr-cell");
+      if (sr) sr.textContent = index + 1;
+    });
+  }
 
-  // Hide everything first
-  document.querySelectorAll(".round-col").forEach(col => col.style.display = "none");
-  document.querySelectorAll(".total-col").forEach(c => c.style.display = "none");
+  function activate(tab) {
+    const col = tab.dataset.col;
+    tabs.forEach(t => {
+      t.classList.toggle("active", t === tab);
+      t.setAttribute("aria-selected", t === tab ? "true" : "false");
+    });
 
-  if (colClass === "total") {
-    // Always show total pigeons + total time columns
-    document.querySelectorAll(".total-col").forEach(c => c.style.display = "");
+    const showingResult = col === "result";
+    if (resultPanel) resultPanel.hidden = !showingResult;
+    if (leaderboardPanel) leaderboardPanel.hidden = showingResult;
+    if (tableInfo) tableInfo.hidden = showingResult;
+    if (searchWrap) searchWrap.hidden = showingResult;
+    if (showingResult) return;
 
-    if (isMobile()) {
-      // Mobile total view: NO per-day columns — keep it to 5 cols max
-      // desktop-day-col stays hidden; pigeons-day-col already hidden
+    document.querySelectorAll(".round-col").forEach(c => { c.style.display = "none"; });
+    document.querySelectorAll(".total-col").forEach(c => { c.style.display = "none"; });
+
+    if (col === "total") {
+      document.querySelectorAll(".total-col").forEach(c => { c.style.display = ""; });
+      sortRows("total");
+      if (dayHint) dayHint.textContent = "";
     } else {
-      // Desktop total view: show all day-time columns (not per-day pigeons)
-      document.querySelectorAll(".round-col").forEach(col => {
-        if (!col.classList.contains("pigeons-day-col")) {
-          col.style.display = "";
-        }
+      document.querySelectorAll("." + col).forEach(c => { c.style.display = ""; });
+      sortRows(tab.dataset.day);
+      if (dayHint) dayHint.textContent = "Arrival times for day " + tab.dataset.day;
+    }
+
+    if (tab.scrollIntoView) {
+      tab.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
+    }
+  }
+
+  tabs.forEach(tab => tab.addEventListener("click", () => activate(tab)));
+
+  const initial = document.querySelector(".date-tab[data-col='total']") || tabs[0];
+  if (initial) activate(initial);
+}());
+
+// ─── ADMIN: PER-PIGEON TIME ENTRY ───
+// Works out each flight and the day total as the admin types, using the same
+// rule the server uses: arrival clock time minus the day's release time, with a
+// bird that sits after midnight counted into the next day.
+(function initPigeonEntry() {
+  const form = document.getElementById("times-form");
+  if (!form || !window.PIGEON_ENTRY) return;
+
+  const config = window.PIGEON_ENTRY;
+  const releaseInput = document.getElementById("day_start_time");
+  const releaseLabel = document.getElementById("release-label");
+  const fallbackRelease = config.releaseTime;
+
+  const toSeconds = (clock) => {
+    if (!clock || clock.indexOf(":") === -1) return null;
+    const [h, m] = clock.split(":");
+    const hours = Number(h), minutes = Number(m);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+    return hours * 3600 + minutes * 60;
+  };
+
+  const release = () => toSeconds((releaseInput && releaseInput.value) || fallbackRelease);
+
+  const fmt = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+  };
+
+  function flight(arrival) {
+    const a = toSeconds(arrival), r = release();
+    if (a === null || r === null) return null;
+    let elapsed = a - r;
+    if (elapsed < 0) elapsed += 86400;
+    return elapsed;
+  }
+
+  function refreshCard(card) {
+    const durations = [];
+    let landed = 0;
+    card.querySelectorAll(".pigeon-field").forEach(field => {
+      const arrivalInput = field.querySelector("[data-role='arrival']");
+      const missBox = field.querySelector("[data-role='miss']");
+      const flightOut = field.querySelector("[data-role='flight']");
+      const missed = missBox && missBox.checked;
+      const isExtra = field.classList.contains("is-extra");
+
+      arrivalInput.disabled = !!missed;
+      field.classList.toggle("is-missed", !!missed);
+
+      const seconds = missed ? null : flight(arrivalInput.value);
+      if (seconds !== null && seconds !== undefined && arrivalInput.value) {
+        // The extra bird only joins the total when the tournament says so.
+        if (!isExtra || config.extraCounts) durations.push(seconds);
+        landed += 1;
+        flightOut.textContent = fmt(seconds);
+      } else {
+        flightOut.textContent = missed ? "bad luck" : "";
+      }
+    });
+
+    durations.sort((a, b) => b - a);
+    const counted = config.scoringLimit > 0 ? durations.slice(0, config.scoringLimit) : durations;
+    const total = counted.reduce((sum, value) => sum + value, 0);
+
+    const totalOut = card.querySelector("[data-role='day-total']");
+    const landedOut = card.querySelector("[data-role='landed-count']");
+    if (totalOut) totalOut.textContent = total ? fmt(total) : "00:00";
+    if (landedOut) landedOut.textContent = landed;
+  }
+
+  const refreshAll = () => form.querySelectorAll(".entry-card").forEach(refreshCard);
+
+  form.addEventListener("input", (event) => {
+    const card = event.target.closest(".entry-card");
+    if (card) refreshCard(card);
+  });
+  form.addEventListener("change", (event) => {
+    const card = event.target.closest(".entry-card");
+    if (card) refreshCard(card);
+  });
+
+  if (releaseInput) {
+    releaseInput.addEventListener("change", () => {
+      if (releaseLabel) releaseLabel.textContent = releaseInput.value || fallbackRelease;
+      refreshAll();
+    });
+  }
+
+  form.addEventListener("click", (event) => {
+    const action = event.target.dataset ? event.target.dataset.action : null;
+    if (!action) return;
+    const card = event.target.closest(".entry-card");
+    if (!card) return;
+
+    if (action === "miss-rest") {
+      card.querySelectorAll(".pigeon-field").forEach(field => {
+        const arrivalInput = field.querySelector("[data-role='arrival']");
+        const missBox = field.querySelector("[data-role='miss']");
+        if (!arrivalInput.value && missBox) missBox.checked = true;
       });
     }
-  } else {
-    // Specific day tab (works same on all screen sizes):
-    // show that day's time + pigeons columns only, hide total cols
-    document.querySelectorAll(`.${colClass}`).forEach(c => c.style.display = "");
-  }
-
-  // Scroll the active tab into view inside the scrollable strip
-  if (tabEl.scrollIntoView) {
-    tabEl.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
-  }
-}
-
-document.querySelectorAll(".date-tab").forEach(tab => {
-  tab.addEventListener("click", function () {
-    activateTab(this, this.dataset.col);
-  });
-});
-
-// Re-apply active tab on resize (desktop ↔ mobile toggle)
-let _resizeTimer;
-window.addEventListener("resize", function () {
-  clearTimeout(_resizeTimer);
-  _resizeTimer = setTimeout(function () {
-    const activeTab = document.querySelector(".date-tab.active");
-    if (activeTab) activateTab(activeTab, activeTab.dataset.col);
-  }, 120);
-});
-
-// Activate Total tab by default
-const totalTab = document.querySelector(".date-tab[data-col='total']");
-if (totalTab) activateTab(totalTab, "total");
-
-// ─── TIME INPUT FORMAT HELPER ───
-document.querySelectorAll(".time-input").forEach(input => {
-  input.addEventListener("blur", function () {
-    const val = this.value.trim();
-    if (!val) return;
-    const parts = val.split(":");
-    if (parts.length === 3) {
-      const h = parts[0].padStart(2, "0");
-      const m = parts[1].padStart(2, "0");
-      const s = parts[2].padStart(2, "0");
-      this.value = `${h}:${m}:${s}`;
+    if (action === "clear-row") {
+      card.querySelectorAll(".pigeon-field").forEach(field => {
+        field.querySelector("[data-role='arrival']").value = "";
+        const missBox = field.querySelector("[data-role='miss']");
+        if (missBox) missBox.checked = false;
+      });
     }
+    refreshCard(card);
   });
-});
+
+  // A disabled input is never posted, so re-enable everything on submit and let
+  // the server read the bad-luck tick instead.
+  form.addEventListener("submit", () => {
+    form.querySelectorAll("[data-role='arrival']").forEach(input => { input.disabled = false; });
+  });
+
+  refreshAll();
+}());
 
 // ─── CONFIRM DELETE ───
 document.querySelectorAll(".confirm-delete").forEach(form => {
@@ -192,20 +329,24 @@ if (homeCarousel) {
     carouselTimer = window.setInterval(() => showSlide(activeSlide + 1), 5000);
   };
 
-  previousButton?.addEventListener("click", () => {
-    showSlide(activeSlide - 1);
-    startCarousel();
-  });
-  nextButton?.addEventListener("click", () => {
-    showSlide(activeSlide + 1);
-    startCarousel();
-  });
+  previousButton?.addEventListener("click", () => { showSlide(activeSlide - 1); startCarousel(); });
+  nextButton?.addEventListener("click", () => { showSlide(activeSlide + 1); startCarousel(); });
   indicators.forEach((indicator) => {
     indicator.addEventListener("click", () => {
       showSlide(Number(indicator.dataset.carouselIndicator));
       startCarousel();
     });
   });
+
+  // Swipe on touch screens.
+  let touchStartX = null;
+  homeCarousel.addEventListener("touchstart", (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  homeCarousel.addEventListener("touchend", (e) => {
+    if (touchStartX === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(delta) > 40) { showSlide(activeSlide + (delta < 0 ? 1 : -1)); startCarousel(); }
+    touchStartX = null;
+  }, { passive: true });
 
   homeCarousel.addEventListener("mouseenter", stopCarousel);
   homeCarousel.addEventListener("mouseleave", startCarousel);

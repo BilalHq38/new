@@ -70,9 +70,7 @@
               <button type="submit" class="btn btn-sm btn-warning">Unpublish</button>
             </form>
             {% else %}
-            <form method="post" action="/admin/tournament/{{ t.id }}/publish" style="display:inline;">
-              <button type="submit" class="btn btn-sm btn-success">Publish Results</button>
-            </form>
+            <a href="/admin/tournament/{{ t.id }}/publish" class="btn btn-sm btn-success">Publish Results</a>
             {% endif %}
 
             <form method="post" action="/admin/tournament/{{ t.id }}/delete"
