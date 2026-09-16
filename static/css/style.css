@@ -511,13 +511,44 @@ img { max-width: 100%; height: auto; display: block; }
   background: var(--white);
   color: var(--navy);
 }
-.home-leaderboard-table-wrap { margin: 0; }
-.home-leaderboard-table { min-width: 720px; }
-.home-leaderboard-table thead th { background: #2b8ab7; }
+.home-leaderboard-table-wrap { margin: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.home-leaderboard-table { min-width: 480px; }
+.home-leaderboard-table thead th { background: #2b8ab7; white-space: nowrap; padding: 9px 8px; }
 .home-leaderboard-table tbody tr:nth-child(even) { background: #f5fafc; }
 .home-leaderboard-table tbody tr:nth-child(odd) { background: var(--white); }
 .home-pigeons-col,
 .home-pigeons-cell { text-align: center; }
+
+/* ── Home leaderboard: compact on mobile ── */
+@media (max-width: 760px) {
+  .home-leaderboard-table {
+    font-size: 0.72rem;
+    min-width: 0;
+    width: 100%;
+  }
+  .home-leaderboard-table thead th { padding: 6px 4px; font-size: 0.66rem; }
+  .home-leaderboard-table td { padding: 6px 4px; }
+
+  /* SR: tiny fixed width */
+  .home-leaderboard-table thead th.sr-col  { width: 20px; min-width: 20px; text-align: center; padding: 6px 2px; }
+  .home-leaderboard-table td.sr-cell        { width: 20px; text-align: center; font-weight: 700; padding: 6px 2px; }
+
+  /* Pic: just the avatar */
+  .home-leaderboard-table thead th.pic-col { width: 28px; min-width: 28px; text-align: center; padding: 6px 2px; }
+  .home-leaderboard-table td.pic-cell       { width: 28px; text-align: center; padding: 4px 2px; }
+  .home-leaderboard-table .participant-img,
+  .home-leaderboard-table .participant-img-placeholder { width: 24px; height: 24px; font-size: 0.68rem; }
+
+  /* Name: short wrap, no huge min-width */
+  .home-leaderboard-table td.name-cell { white-space: normal; min-width: 70px; max-width: 100px; }
+  .home-leaderboard-table .participant-name { font-size: 0.7rem; font-weight: 700; }
+  .home-leaderboard-table .participant-city { font-size: 0.6rem; }
+
+  /* Pigeons + time cols: monospace, compact */
+  .home-leaderboard-table td.home-pigeons-cell,
+  .home-leaderboard-table td.time-cell,
+  .home-leaderboard-table td.total-cell { font-size: 0.7rem; white-space: nowrap; padding: 5px 4px; text-align: center; }
+}
 .home-empty-state {
   padding: 24px;
   color: var(--text-muted);
@@ -1256,12 +1287,13 @@ td.time-zero { color: #aab; }
   .tournament-grid { grid-template-columns: 1fr; }
   .card-banner,
   .card-banner-placeholder { height: 100px; }
-  /* Tournament table on small phones: more compact, always a real table */
+  /* Tournament table on very small phones: tightest layout, still a real table */
   .leaderboard-table {
-    font-size: 0.65rem;
-    min-width: 380px;       /* still forces scroll rather than collapsing */
-    width: max-content;
+    font-size: 0.62rem;
+    width: 100%;
+    min-width: 0;
     max-width: none;
+    table-layout: fixed;
   }
   .leaderboard-table,
   .leaderboard-table thead,
@@ -1269,9 +1301,20 @@ td.time-zero { color: #aab; }
   .leaderboard-table tr,
   .leaderboard-table th,
   .leaderboard-table td { display: revert; }
-  .leaderboard-table td,
-  .leaderboard-table thead th { padding: 5px 3px; }
-  td.time-cell, td.total-cell { font-size: 0.65rem; }
+  .leaderboard-table thead th          { padding: 5px 2px; font-size: 0.6rem; }
+  .leaderboard-table td                { padding: 4px 2px; }
+  .leaderboard-table thead th.sr-col   { width: 18px; }
+  .leaderboard-table thead th.pic-col  { width: 24px; }
+  .leaderboard-table thead th.name-col { width: 76px; }
+  .leaderboard-table thead th.time-col { width: 46px; }
+  td.sr-cell   { width: 18px; font-size: 0.6rem; }
+  td.pic-cell  { width: 24px; }
+  td.name-cell { width: 76px; }
+  .participant-img,
+  .participant-img-placeholder { width: 20px; height: 20px; font-size: 0.6rem; }
+  .participant-name { font-size: 0.62rem; }
+  .participant-city { font-size: 0.55rem; }
+  td.time-cell, td.total-cell { font-size: 0.62rem; }
   .search-input { width: 100%; font-size: 0.82rem; }
   .search-wrap { text-align: left; }
   .navbar-meta-clock { font-size: 0.68rem; }
@@ -1612,7 +1655,9 @@ td.pigeon-pending { color: #9aa8b6; }
 
 /* ══════════════════════════════════════════════════════════════════
    MOBILE LEADERBOARD — always a real scrollable <table>, never cards.
-   .t-wrap handles horizontal overflow. SR + Pic + Name are sticky.
+   Goal: SR + Pic take minimum px; Name is short; data columns get
+   the majority of screen width. No sticky columns — they consume
+   too much of the narrow viewport.
    ══════════════════════════════════════════════════════════════════ */
 @media (max-width: 760px) {
 
@@ -1631,88 +1676,115 @@ td.pigeon-pending { color: #9aa8b6; }
   .leaderboard-table tr,
   .leaderboard-table th,
   .leaderboard-table td {
-    display: revert;          /* cancel any accidental display:block override */
-  }
-  .leaderboard-table {
-    font-size: 0.72rem;
-    /* wide enough that all visible columns are legible; wrapper scrolls the rest */
-    min-width: 420px;
-    width: max-content;       /* shrink-wraps to content, wrapper scrolls */
-    max-width: none;
+    display: revert;
   }
 
-  /* ── Header row ── */
-  .leaderboard-table thead th {
-    padding: 7px 5px;
-    font-size: 0.68rem;
-    white-space: nowrap;
-    background: var(--teal);
+  /* Table fits the viewport for Total/Result views; Day view scrolls */
+  .leaderboard-table {
+    font-size: 0.72rem;
+    width: 100%;          /* fill wrapper in total view */
+    min-width: 0;
+    max-width: none;
+    table-layout: fixed; /* let column widths below control proportions */
   }
-  .leaderboard-table thead th.sr-col  { width: 24px; min-width: 24px; text-align: center; }
-  .leaderboard-table thead th.pic-col { width: 30px; min-width: 30px; text-align: center; }
+
+  /* ── Column width budget (total view) ──
+     SR: 22px  Pic: 28px  Name: ~90px  rest: auto  Total: ~60px
+     These are hints; table-layout:fixed enforces them.           */
+  .leaderboard-table thead th { padding: 6px 3px; font-size: 0.66rem; white-space: nowrap; }
+  .leaderboard-table thead th.sr-col   { width: 22px; min-width: 22px; text-align: center; }
+  .leaderboard-table thead th.pic-col  { width: 28px; min-width: 28px; text-align: center; }
+  .leaderboard-table thead th.name-col { width: 90px; }
+  .leaderboard-table thead th.time-col { width: 52px; }
+  .leaderboard-table thead th.pigeons-col { width: 28px; }
 
   /* ── Body cells ── */
   .leaderboard-table td {
-    display: table-cell;      /* belt-and-suspenders: always a real cell */
-    padding: 6px 5px;
+    display: table-cell;
+    padding: 5px 3px;
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
     vertical-align: middle;
+    overflow: hidden;
   }
-  td.sr-cell  { font-size: 0.72rem; text-align: center; width: 24px; }
-  td.pic-cell { text-align: center; width: 30px; padding: 4px 3px; }
 
-  /* ── Photos ── */
+  /* SR — just the number */
+  td.sr-cell {
+    width: 22px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 5px 2px;
+    color: var(--navy);
+  }
+
+  /* Pic — avatar only, no padding waste */
+  td.pic-cell {
+    width: 28px;
+    text-align: center;
+    padding: 3px 2px;
+  }
   .participant-img,
-  .participant-img-placeholder { width: 26px; height: 26px; font-size: 0.72rem; border-width: 1px; }
+  .participant-img-placeholder {
+    width: 24px;
+    height: 24px;
+    font-size: 0.65rem;
+    border-width: 1px;
+  }
 
-  /* ── Name cell: allow wrap, cap width ── */
-  td.name-cell { white-space: normal; min-width: 85px; max-width: 130px; }
-  .participant-name { font-size: 0.72rem; font-weight: 700; line-height: 1.3; }
-  .participant-city { font-size: 0.62rem; margin-top: 1px; }
+  /* Name — wraps, capped so data columns get their fair share */
+  td.name-cell {
+    width: 90px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    padding: 4px 3px;
+  }
+  .participant-name { font-size: 0.68rem; font-weight: 700; line-height: 1.25; }
+  .participant-city { font-size: 0.58rem; margin-top: 1px; color: var(--text-muted); }
 
-  /* ── Time / pigeon cells ── */
-  td.time-cell,
-  td.pigeons-cell { font-size: 0.7rem; text-align: center; padding: 5px 4px; white-space: nowrap; }
+  /* Pigeon count cell */
+  td.pigeons-cell { font-size: 0.68rem; text-align: center; width: 28px; padding: 5px 2px; }
 
-  /* ── Total column ── */
+  /* Time / day-total cells */
+  td.time-cell { font-size: 0.68rem; text-align: center; padding: 5px 3px; font-family: monospace; white-space: nowrap; }
+
+  /* Grand total */
   td.total-cell {
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     font-weight: 800;
     color: var(--teal);
     background: #f0faf7;
     white-space: nowrap;
     text-align: center;
-    padding: 5px 4px;
+    padding: 5px 3px;
+    font-family: monospace;
   }
   td.grand-total-col { border-left: 2px solid var(--teal); }
-  td.day-total-col   { border-left: 2px solid rgba(0,0,0,0.08); }
+  td.day-total-col   { border-left: 1px solid rgba(0,0,0,0.08); }
 
-  /* ── Sticky SR + Pic + Name — always visible while swiping ── */
+  /* ── NO sticky columns on mobile — they eat too much of the viewport.
+     Swiping right shows all pigeon times naturally. ── */
   .leaderboard-table thead th.sr-col,
-  .leaderboard-table td.sr-cell {
-    position: sticky; left: 0; z-index: 3;
-  }
+  .leaderboard-table td.sr-cell,
   .leaderboard-table thead th.pic-col,
-  .leaderboard-table td.pic-cell {
-    position: sticky; left: 24px; z-index: 3;
-  }
+  .leaderboard-table td.pic-cell,
   .leaderboard-table thead th.name-col,
   .leaderboard-table td.name-cell {
-    position: sticky; left: 54px; z-index: 3;
-    border-right: 2px solid rgba(0,0,0,0.10);
+    position: static;
+    border-right: none;
   }
 
-  /* ── Zebra stripes: on <td> not <tr> so sticky backgrounds work ── */
+  /* Zebra stripes on <td> so any future sticky bg still works */
   .leaderboard-table tbody tr:nth-child(odd)  td { background: var(--white); }
   .leaderboard-table tbody tr:nth-child(even) td { background: var(--light-blue); }
   .leaderboard-table tbody tr:hover           td { background: #cde8f5; }
   .leaderboard-table tbody tr td.total-cell      { background: #f0faf7; }
 
   /* ── Bad-luck badge ── */
-  .bad-luck { padding: 1px 5px; font-size: 0.65rem; }
+  .bad-luck { padding: 1px 4px; font-size: 0.62rem; }
 
-  /* ── Toolbar: stays as a compact row on mobile, no column stretch ── */
+  /* ── Toolbar: compact row ── */
   .table-toolbar {
     flex-direction: row;
     align-items: center;
@@ -1720,11 +1792,7 @@ td.pigeon-pending { color: #9aa8b6; }
     gap: 6px;
     margin: 4px 0;
   }
-  .table-toolbar .search-wrap {
-    flex: 1 1 auto;
-    min-width: 0;
-    text-align: right;
-  }
+  .table-toolbar .search-wrap { flex: 1 1 auto; min-width: 0; text-align: right; }
   .day-hint { white-space: normal; font-size: 0.72rem; }
 
   /* ── Spacing tighten ── */
